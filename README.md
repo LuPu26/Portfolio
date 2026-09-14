@@ -1,4 +1,3 @@
-[README.md](https://github.com/user-attachments/files/32193386/README.md)
 # lucazoe.com — Portfolio Website
 
 Design portfolio for Luca Zoe Pumpe. A static, no-build website: plain HTML, CSS and vanilla JavaScript, no framework and no package manager involved.
