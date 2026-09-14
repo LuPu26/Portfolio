@@ -1,0 +1,600 @@
+:root {
+  --paper: #fefff6;
+  --ink: #11110f;
+  --acid: #bfc72a;
+  --pink: #ebcbe3;
+  --red: #c83306;
+  --gutter: clamp(1.25rem, 5vw, 6rem);
+  --nav-w: 2.75rem;
+  --content-safe: calc(var(--gutter) + var(--nav-w) + 1.25rem);
+
+  /* type system, shared with project.css: exactly 4 categories, each a fixed
+     family+weight pair everything on the site must match. H1 = display/400,
+     appears exactly once (the hero title, project.html only — this page's hero
+     is a logo image). H2 = display/700, every other heading, boxed or not, plus
+     any small-caps label styled like one (e.g. the drag-hint, the work card's
+     hover meta line). Fließtext = text/400, all body copy. Button = display/700
+     + uppercase, reserved for anything meant to read as clickable UI (filled
+     boxes, nav links, "next" labels) — sizes vary by context (a nav link isn't
+     sized like a filled CTA) but family+weight+case never do. H2 sits a half
+     golden-ratio step (√1.618) above body; Button was dialed down a further
+     full step below that, so it no longer moves in lockstep with H2. */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-text: 'DM Sans', sans-serif;
+  --fs-ratio: 1.618;
+  --fs-ratio-step: 1.272;
+  --fs-body: 1rem;
+  --fs-h2: calc(var(--fs-body) * var(--fs-ratio-step) * var(--fs-ratio-step));
+  --fs-button: calc(var(--fs-body) * var(--fs-ratio-step) / var(--fs-ratio));
+  --fs-h1: calc(var(--fs-body) * 4.236);
+}
+
+* { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-color: var(--acid) var(--paper);
+  scrollbar-width: thin;
+}
+
+/* deferred images (script.js only sets their real src once they actually
+   scroll into view — see the IntersectionObserver there): a shimmering
+   placeholder fills the box so loading is visible, and once the observer
+   fires the image rises up from below into its final spot; the shimmer then
+   just gets swapped out for the decoded photo underneath it once it arrives */
+@keyframes img-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+img[data-src] {
+  translate: 0 6rem;
+  transition: translate 3s cubic-bezier(.16,1,.3,1);
+}
+/* work-card images skip the shimmer placeholder entirely — the card sits with
+   no background of its own, so while loading it should show nothing at all
+   behind the photo rather than a tinted fill */
+img[data-src]:not(.work-card-image) {
+  background: linear-gradient(100deg, rgba(17,17,15,.05) 30%, rgba(17,17,15,.12) 50%, rgba(17,17,15,.05) 70%);
+  background-size: 200% 100%;
+  animation: img-shimmer 1.4s ease-in-out infinite;
+}
+/* carousel .slide images sit this opacity fade out — they're already opacity:0/1
+   toggled by .is-active (see the slider rules further down) and stacked via
+   position:absolute, so fading them in independently would show every slide at
+   once; they still get the shimmer + the further/slower rise above */
+img[data-src]:not(.slide) {
+  opacity: 0;
+  transition: translate 3s cubic-bezier(.16,1,.3,1), opacity 3s cubic-bezier(.16,1,.3,1);
+}
+img[data-src].is-entering { translate: 0 0; }
+img[data-src]:not(.slide).is-entering { opacity: 1; }
+img[data-src].is-loaded { animation: none; background: none; }
+@media (prefers-reduced-motion: reduce) {
+  img[data-src] { animation: none; translate: 0 0; opacity: 1; transition: none; }
+}
+
+::-webkit-scrollbar { width: 12px; }
+::-webkit-scrollbar-track { background: var(--paper); }
+::-webkit-scrollbar-thumb { background: var(--acid); border: 2px solid var(--paper); }
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: var(--font-text);
+  font-size: 16px;
+  /* clip, not hidden: hidden (or auto/scroll) on only one axis forces the
+     other axis to compute as auto too, turning body into its own scroll
+     container — which breaks .site-nav's position:fixed sidebar (it would
+     start tracking that new scroll container instead of the viewport).
+     clip suppresses the same stray horizontal overflow without ever
+     creating a scrolling box. */
+  overflow-x: clip;
+}
+
+a { color: inherit; text-decoration: none; }
+
+.site-nav {
+  position: fixed;
+  z-index: 10;
+  top: 3.5rem;
+  left: calc((var(--content-safe) - var(--nav-w)) / 2);
+  width: var(--nav-w);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: calc(100vh - 7rem);
+}
+
+.menu-button {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  color: var(--ink);
+  font: 700 var(--fs-body) var(--font-display);
+  letter-spacing: .1em;
+  transition: color .25s ease;
+}
+
+/* flex:1 lets the line fill all the leftover height, pushing CONTACT/ABOUT ME/WORK
+   down flush with the nav's own bottom edge — so the gap below WORK matches the
+   gap above MENUE, both set by .site-nav's top/height */
+.menu-line {
+  width: 1px;
+  flex: 1;
+  margin-top: 1.1rem;
+  background: var(--ink);
+  transition: background .25s ease;
+}
+
+.nav-links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.3rem;
+}
+
+.nav-links a {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font: 400 var(--fs-body) var(--font-display);
+  letter-spacing: .08em;
+  transition: color .2s ease;
+}
+
+.nav-links a:hover { color: #777b00; }
+/* legal links only ever show in the mobile dropdown (see the media query
+   below) — the desktop sidebar has no room, and CONTACT already covers
+   reaching out */
+.nav-links-legal { display: none; }
+
+/* hamburger button only exists for the mobile top-bar nav; hidden entirely on
+   desktop so the sidebar nav below is completely unaffected by its presence */
+.nav-toggle { display: none; }
+
+/* white only while a red section (contact) is behind the nav, black everywhere else */
+.site-nav.on-dark .menu-button { color: var(--paper); }
+.site-nav.on-dark .menu-line { background: var(--paper); }
+.site-nav.on-dark .nav-links a { color: var(--paper); }
+.site-nav.on-dark .nav-links a:hover { color: var(--acid); }
+
+.site-footer {
+  padding: 1.5rem var(--gutter) 2rem var(--content-safe);
+  display: flex;
+  gap: .6rem;
+  font: 400 .8rem var(--font-text);
+  color: #8a8a7a;
+}
+.site-footer a { color: inherit; }
+.site-footer a:hover { color: 7b0hsl(60, 100%, 23%); }
+
+.hero-section { height: 100svh; position: relative; }
+
+.hero {
+  position: relative;
+  height: 100%;
+  padding: 3.2rem var(--gutter) 7rem;
+  --logo-w: min(44rem, 59vw);
+  --logo-h: calc(var(--logo-w) * 0.664);
+}
+
+.hero-title-heading { display: contents; }
+
+.hero-type {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  width: min(44rem, 59vw);
+  max-width: 66vw;
+  height: auto;
+  filter: drop-shadow(0 0.65rem .35rem rgba(40, 42, 0, .22));
+  transform: translate(-50%, -50%) rotate(-1.5deg);
+  user-select: none;
+  pointer-events: none;
+}
+
+/* stickers and the hint are visible immediately (no more scroll-to-reveal) —
+   a brief one-time wobble on load (triggered from script.js) is the cue that
+   they're draggable instead */
+.category {
+  position: absolute;
+  z-index: 2;
+  font: 400 var(--fs-body) var(--font-text);
+  pointer-events: auto;
+}
+
+/* animates the standalone `rotate` property, not `transform: rotate(...)` —
+   dragging a sticker sets an inline `transform: translate(...)` on this same
+   element, and since `rotate` composes independently alongside `transform`
+   instead of overwriting it, the wobble no longer snaps a dragged sticker back
+   to its un-dragged origin for the animation's duration */
+@keyframes sticker-wobble {
+  0%, 100% { rotate: 0deg; }
+  20% { rotate: -9deg; }
+  40% { rotate: 8deg; }
+  60% { rotate: -5deg; }
+  80% { rotate: 3deg; }
+}
+.category-photo.wobble .category-inner { animation: sticker-wobble .7s ease; }
+
+.category-photo .category-inner {
+  display: block;
+  height: auto;
+  cursor: grab;
+  touch-action: none;
+  -webkit-user-drag: none;
+}
+
+/* widths tied to --logo-w (not independent vw/rem clamps) so every sticker scales in lockstep
+   with the logo and JS's viewport-fit calculation below keeps the whole arrangement on-screen */
+.category.face-1 .category-inner { width: calc(var(--logo-w) * 0.4347); }
+.category.face-2 .category-inner { width: calc(var(--logo-w) * 0.1811); }
+.category.face-3 .category-inner { width: calc(var(--logo-w) * 0.3502); }
+.category.face-4 .category-inner { width: calc(var(--logo-w) * 0.2849); }
+.category.face-5 .category-inner { width: calc(var(--logo-w) * 0.5433); }
+.category.face-6 .category-inner { width: calc(var(--logo-w) * 0.3825); }
+
+.category-photo.is-dragging .category-inner {
+  cursor: grabbing;
+}
+
+.category-inner {
+  display: inline-block;
+  will-change: transform;
+}
+
+/* sits below the logo instead of above it, offset from center by half the
+   logo's own height (plus clearance) so it tracks the logo at any size —
+   z-index raised above the stickers' own (2) so a scattered sticker landing
+   near it (e.g. face-1/face-6 at the bottom) never paints over the text */
+.category.drag-hint {
+  top: 50%;
+  left: 50%;
+  z-index: 5;
+  transform: translate(-50%, calc(-50% + var(--logo-h) * .56));
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-h2);
+  max-width: min(90vw, 40rem);
+  text-align: center;
+  transition: opacity .26s ease;
+}
+
+/* text swap at burst time: "Portfolio" fades out, the tagline fades back in —
+   same uppercase/weight as "Portfolio", just a smaller size since it's a full
+   sentence rather than one word */
+.category.drag-hint.is-fading { opacity: 0; }
+.category.drag-hint.is-message {
+  font-size: clamp(1.05rem, 2.1vw, 1.55rem);
+}
+
+.category:hover { color: #777b00; }
+
+/* the little "boom" that flashes at the moment the assembled pieces burst apart —
+   the actual reference graphic (stickers/explosion.png, background removed),
+   sat centered on the logo, above everything (including the raised drag-hint),
+   invisible until script.js adds .is-bursting, then pops and fades in one go */
+.hero-explosion {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 6;
+  width: clamp(8rem, 20vw, 15rem);
+  height: auto;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(.2);
+  pointer-events: none;
+  user-select: none;
+}
+
+@keyframes hero-explosion-pop {
+  0% { transform: translate(-50%, -50%) scale(.2) rotate(-8deg); opacity: 0; }
+  35% { transform: translate(-50%, -50%) scale(1.15) rotate(4deg); opacity: 1; }
+  60% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.35) rotate(2deg); opacity: 0; }
+}
+.hero.is-bursting .hero-explosion { animation: hero-explosion-pop .6s ease-out forwards; }
+
+/* first 5s: the pieces sit assembled into two little faces (glasses/nose/lips at
+   one spot, the other eyes/mouth at another) instead of scattered — script.js then
+   adds .is-burst, and .is-bursting for just the transition's duration, so they
+   spring apart into the arrangement below */
+.hero.is-bursting .category.category-photo {
+  transition: transform .9s cubic-bezier(.34, 1.56, .64, 1);
+}
+
+/* assembled (pre-burst): traced directly off the reference screenshot (offsets
+   relative to the logo's own box, same convention as the burst rules below) —
+   eyes sit behind the glasses' clear lenses, nose sits lower and behind everything */
+.hero .category.face-1 { top: 50%; left: 50%; z-index: 2; transform: translate(calc(-50% + var(--logo-w) * 0.771), calc(-50% + var(--logo-h) * -0.247)); }
+.hero .category.face-2 { top: 50%; left: 50%; z-index: 1; transform: translate(calc(-50% + var(--logo-w) * 0.74), calc(-50% + var(--logo-h) * -0.28)); }
+.hero .category.face-3 { top: 50%; left: 50%; z-index: 4; transform: translate(calc(-50% + var(--logo-w) * 0.74), calc(-50% + var(--logo-h) * -0.03)); }
+.hero .category.face-4 { top: 50%; left: 50%; z-index: 4; transform: translate(calc(-50% + var(--logo-w) * -0.516), calc(-50% + var(--logo-h) * 0.477)); }
+.hero .category.face-5 { top: 50%; left: 50%; z-index: 3; transform: translate(calc(-50% + var(--logo-w) * 0.771), calc(-50% + var(--logo-h) * -0.277)); }
+.hero .category.face-6 { top: 50%; left: 50%; z-index: 4; transform: translate(calc(-50% + var(--logo-w) * -0.548), calc(-50% + var(--logo-h) * 0.228)); }
+
+/* burst (final): arrangement matches screenshots/anordnung-gesicht.png, offsets relative to the logo's own box */
+.hero.is-burst .category.face-1 { z-index: 2; transform: translate(calc(-50% + var(--logo-w) * 0.42), calc(-50% + var(--logo-h) * 0.644)); }
+.hero.is-burst .category.face-2 { z-index: 2; transform: translate(calc(-50% + var(--logo-w) * -0.641), calc(-50% + var(--logo-h) * -0.4)); }
+.hero.is-burst .category.face-3 { z-index: 2; transform: translate(calc(-50% + var(--logo-w) * 0.7), calc(-50% + var(--logo-h) * -0.06)); }
+.hero.is-burst .category.face-4 { z-index: 2; transform: translate(calc(-50% + var(--logo-w) * -0.418), calc(-50% + var(--logo-h) * 0.29)); }
+.hero.is-burst .category.face-5 { z-index: 2; transform: translate(calc(-50% + var(--logo-w) * 0.171), calc(-50% + var(--logo-h) * -0.38)); }
+.hero.is-burst .category.face-6 { z-index: 2; transform: translate(calc(-50% + var(--logo-w) * -0.6), calc(-50% + var(--logo-h) * 0.68)); }
+
+.section {
+  min-height: 100svh;
+  padding: 3rem var(--gutter) 3rem var(--content-safe);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.section-heading {
+  margin: 0 0 3.2rem;
+  font: 700 var(--fs-h2) var(--font-display);
+}
+
+/* a badge is only "button"-colored (acid/pink) when it's actually clickable; a
+   plain white-filled badge is just a heading (H2), styled but not pressable */
+.section-heading.button {
+  display: inline-block;
+  margin: 0;
+  padding: .35rem .9rem;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  color: var(--ink);
+  font-size: var(--fs-h2);
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  font-weight: 700;
+  font-family: var(--font-display);
+}
+
+.about {
+  position: relative;
+}
+/* align-items: center centers .about-centered — the heading + the two columns,
+   grouped together — as a single block within the section's full width */
+.about-copy { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: clamp(1rem, 2.2vw, 1.9rem); }
+.about-text { max-width: 40ch; margin: 0; font: var(--fs-body) var(--font-text); line-height: 1.65; color: #3d3d33; }
+
+/* inside that centered block, align-items: flex-start keeps the heading flush
+   with the left edge of the columns below it (rather than centered on its own,
+   narrower width) — a narrower max-width keeps the whole group more compact */
+.about-centered { display: flex; flex-direction: column; align-items: flex-start; gap: clamp(1rem, 2.2vw, 1.9rem); max-width: 66rem; }
+
+/* the intro text and the Education & Work timeline side by side, vertically
+   centered on each other (instead of top-aligned, so the shorter intro text
+   doesn't leave Education & Work sitting low); wraps back to a single stacked
+   column if the combined width doesn't fit */
+.about-columns { display: flex; flex-wrap: wrap; align-items: flex-start; gap: clamp(2rem, 4vw, 4rem); }
+.about-intro { display: flex; flex-direction: column; gap: clamp(1rem, 2.2vw, 1.9rem); max-width: 40ch; }
+
+.about-timelines { display: flex; flex-direction: column; gap: clamp(1.6rem, 3vw, 2.3rem); max-width: 40ch; align-self: center; transform: translateY(-80px); }
+.about-block { display: flex; flex-direction: column; gap: .8rem; }
+.about-subheading { margin: 0; font: 700 clamp(1.2rem, 2vw, 1.45rem) var(--font-display); color: var(--ink); }
+
+.about-timeline { position: relative; list-style: none; margin: 0; padding-left: 1.6rem; border-left: 2px solid var(--ink); display: flex; flex-direction: column; gap: 1.1rem; }
+.about-timeline li { position: relative; }
+/* diamond marker centered on the vertical line, echoing the reference layout */
+.about-timeline li::before { content: ''; position: absolute; left: -1.6rem; top: .4rem; width: .55rem; height: .55rem; background: var(--ink); transform: translateX(-50%) rotate(45deg); }
+.about-timeline-date { display: block; font: var(--fs-body) var(--font-text); color: #3d3d33; }
+.about-timeline-desc { display: block; font: var(--fs-body) var(--font-text); color: #3d3d33; line-height: 1.4; }
+
+/* its own full-height section again (no more overlap with the hero above);
+   centering .work-sticky inside it gives even breathing room top and bottom
+   whenever the content is shorter than the viewport */
+.work-section { padding: 0; position: relative; height: 100svh; display: flex; flex-direction: column; justify-content: center; }
+/* trimmed padding/gap (vs. the previous, more generous chrome) so the gallery
+   grid — the section's actual content — claims more of the fixed 100svh area */
+.work-sticky { min-height: 34rem; display: flex; flex-direction: column; justify-content: space-between; gap: clamp(1.25rem, 2.4vw, 2rem); padding: clamp(2.25rem, 6vh, 4.5rem) var(--gutter) clamp(2rem, 5vh, 3.75rem) var(--content-safe); }
+.work-header { display: flex; align-items: baseline; gap: 1.5rem; flex-wrap: wrap; }
+.work-header, .work-body { position: relative; z-index: 1; }
+/* column-reverse: the categories row sits last in the markup (after the
+   gallery) but renders first — filters above the gallery, same arrangement
+   as the mobile layout below */
+.work-body { display: flex; flex-direction: column-reverse; gap: clamp(.75rem, 1.6vw, 1.25rem); flex: 1; min-height: 0; }
+/* a static single-row gallery grid, not a slider — cards no longer
+   expand/collapse or track scroll position, they just sit side by side */
+.work-slider { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: 1fr; gap: clamp(.5rem, 1vw, 1rem); flex: 1; min-height: 0; }
+/* invisible on desktop (display:contents removes it from the box tree, so the
+   cards inside stay direct grid children of .work-slider); the mobile media
+   query turns it into the actual sliding track of a side-by-side,
+   auto-advancing slider */
+.work-track { display: contents; }
+.work-categories { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: .6rem; flex: none; }
+/* pink fill = a real, clickable filter button, so it gets the dedicated button
+   size — bigger than body copy, smaller than any heading */
+.work-category-box {
+  display: inline-block;
+  padding: .35rem .9rem;
+  background: transparent;
+  border: 2px solid var(--ink);
+  color: var(--ink);
+  font: 700 var(--fs-button) var(--font-display);
+  line-height: 1.05;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .2s ease, color .2s ease;
+}
+.work-category-box:hover { background: rgba(0, 0, 0, .06); }
+.work-category-box.is-active { background: var(--pink); color: var(--ink); }
+.work-category-box.is-active:hover { background: #ddb0d0; }
+.work-next {
+  position: absolute;
+  top: calc(clamp(3.5rem, 9vh, 6.5rem) + 2px + .35rem);
+  right: var(--gutter);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .35rem;
+  color: var(--ink);
+}
+.work-next-arrow {
+  font-size: 1.6rem;
+  line-height: 1;
+  display: inline-block;
+  transform: scaleY(1.6);
+  transition: transform .2s ease;
+}
+.work-next:hover .work-next-arrow { transform: scaleY(1.6) translateY(.2rem); }
+.work-card { position: relative; width: 100%; height: 100%; overflow: hidden; cursor: pointer; }
+.work-card.is-hidden { display: none; }
+.work-card-image { width: 100%; height: 100%; object-fit: cover; display: block; }
+.work-card-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: .5rem; padding: 1.9rem 1.75rem 1.6rem; background: rgba(0,0,0,.5); opacity: 0; transition: opacity 340ms ease; }
+.work-card:hover .work-card-overlay { opacity: 1; }
+.work-card-year { color: #d6e635; font: 700 .68rem/1 var(--font-display); letter-spacing: .16em; text-transform: uppercase; }
+.work-card-title { color: #fffdeb; font: 700 var(--fs-h2)/1 var(--font-display); }
+
+.contact {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-content: center;
+  gap: 5rem;
+  background: #f23800;
+  color: var(--paper);
+}
+
+.contact-copy { display: flex; flex-direction: column; align-items: flex-start; gap: clamp(1rem, 2.2vw, 1.9rem); }
+.contact-copy p { margin: 0; }
+/* green fill = a real, clickable link, so it gets the button size/style
+   instead of a plain underline */
+.contact-cta { display: inline-block; padding: .8rem 1.4rem; background: var(--acid); border: 2px solid var(--ink); color: var(--ink); font: 700 var(--fs-button) var(--font-display); text-transform: uppercase; letter-spacing: .02em; }
+
+.contact-form { display: grid; gap: .35rem; }
+.contact-form label { color: var(--paper); }
+
+.contact-form input,
+.contact-form textarea {
+  width: 100%;
+  border: 2px solid var(--paper);
+  border-radius: 0;
+  background: transparent;
+  color: var(--paper);
+  font: inherit;
+  padding: .65rem .75rem;
+  outline: none;
+}
+
+.contact-form input::placeholder,
+.contact-form textarea::placeholder { color: rgba(254, 255, 246, .65); }
+
+.contact-form input:focus,
+.contact-form textarea:focus { box-shadow: 4px 4px 0 var(--paper); }
+.contact-form textarea { min-height: 7rem; resize: vertical; }
+.contact-form button { justify-self: start; border: 2px solid var(--ink); background: var(--acid); color: var(--ink); cursor: pointer; padding: .8rem 1.4rem; font: 700 var(--fs-button) var(--font-display); text-transform: uppercase; letter-spacing: .02em; }
+
+.contact-legal { position: absolute; left: var(--content-safe); bottom: 1.5rem; display: flex; gap: .6rem; font: 400 .8rem var(--font-text); color: var(--paper); opacity: .75; }
+.contact-legal a { color: inherit; }
+.contact-legal a:hover { color: var(--acid); }
+.contact-face { width: clamp(21.6rem, 32.4vw, 30.6rem); height: auto; transform: rotate(-6deg); filter: drop-shadow(0 .5rem .4rem rgba(0, 0, 0, .25)); }
+.form-status { font-size: .85rem; min-height: 1.3em; }
+
+@media (max-width: 1080px) {
+  /* every heading (section titles, the hero's "Portfolio" hint, slider
+     captions) reads off --fs-h2, so scaling it down here makes them all a
+     notch smaller together instead of hand-tuning each one */
+  :root { --fs-h2: calc(var(--fs-body) * var(--fs-ratio-step) * var(--fs-ratio-step) * 0.8); }
+
+  /* the desktop's vertical sidebar collapses into a fixed top bar: HOME stays
+     at the left edge, CONTACT/ABOUT ME/WORK move into a hamburger-triggered
+     dropdown at the right. The bar is opaque, so content needs top clearance
+     (reserved via body padding) and the nav no longer needs to swap to light
+     text over dark sections — it always sits above them now, not over them. */
+  body { padding-top: 3.75rem; }
+  .site-nav {
+    flex-direction: row;
+    align-items: center;
+    top: 0;
+    left: 0;
+    width: 100%;
+    /* matches body's padding-top exactly, so there's no sub-pixel sliver
+       between the nav's own background and the page content below it */
+    height: 3.75rem;
+    padding: 0 1.25rem;
+    background: var(--paper);
+  }
+  .menu-button { writing-mode: horizontal-tb; transform: none; }
+  /* same relationship as the desktop sidebar (line fills the leftover space
+     between HOME and the rest), just rotated: a horizontal rule between HOME
+     and the hamburger instead of a vertical one between HOME and the links */
+  .menu-line { display: block; width: auto; height: 1px; flex: 1; margin: 0 1.1rem; }
+  .nav-toggle { display: flex; flex-direction: column; justify-content: center; gap: .3rem; width: 1.9rem; height: 1.4rem; background: none; border: none; padding: 0; cursor: pointer; }
+  .nav-toggle-bar { display: block; width: 100%; height: 2px; background: var(--ink); transition: transform .25s ease, opacity .2s ease; }
+  .site-nav.is-open .nav-toggle-bar:nth-child(1) { transform: translateY(.85rem) rotate(45deg); }
+  .site-nav.is-open .nav-toggle-bar:nth-child(2) { opacity: 0; }
+  .site-nav.is-open .nav-toggle-bar:nth-child(3) { transform: translateY(-.85rem) rotate(-45deg); }
+  .nav-links {
+    position: fixed;
+    top: 3.75rem;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    max-height: 0;
+    overflow: hidden;
+    background: var(--paper);
+    border-bottom: 2px solid transparent;
+    transition: max-height .25s ease, border-color .25s ease;
+  }
+  .site-nav.is-open .nav-links { max-height: 16rem; border-bottom-color: var(--ink); }
+  .nav-links a { writing-mode: horizontal-tb; transform: none; padding: 1rem 1.25rem; border-top: 1px solid rgba(17, 17, 15, .12); }
+  .site-nav.on-dark .menu-button,
+  .site-nav.on-dark .nav-links a { color: var(--ink); }
+  .site-nav.on-dark .menu-line { background: var(--ink); }
+  /* Impressum/Datenschutz ride along in the same dropdown as CONTACT/ABOUT
+     ME/WORK, but read as secondary: smaller body copy instead of the bold
+     display font the real nav items use, so they don't compete with them */
+  .nav-links-legal { display: flex; gap: .6rem; padding: .85rem 1.25rem 1.1rem; border-top: 1px solid rgba(17, 17, 15, .12); }
+  .nav-links-legal a { font: 400 .8rem var(--font-text); letter-spacing: normal; opacity: .7; padding: 0; border-top: none; }
+
+  .hero-type { width: 84vw; max-width: 84vw; }
+  .hero { --logo-w: 84vw; }
+  .section { padding-left: var(--gutter); }
+  .site-footer { padding-left: var(--gutter); }
+  /* below this breakpoint the 3x2 gallery grid goes back to being a single,
+     one-viewport-tall slide deck, advanced by the 3s timer in script.js */
+  .work-section { height: 100svh; }
+  .work-sticky { min-height: 38rem; padding-left: var(--gutter); padding-right: var(--gutter); }
+  .work-body { gap: .6rem; }
+  /* back to a flex slider (desktop's base is now a grid): pan-y lets vertical
+     page scroll still work over the slider, horizontal swipe is claimed by
+     script.js's own pointer handling instead of the browser's native scrolling */
+  .work-slider { display: flex; flex: 1 1 0; min-height: 0; overflow: hidden; touch-action: pan-y; }
+  /* the track holds the cards genuinely side by side and slides by 100% per
+     step (script.js sets the transform, from either the 3s timer or a
+     finger swipe), so exactly one always fills the whole gallery area */
+  .work-track { display: flex; width: 100%; height: 100%; transition: transform 600ms cubic-bezier(.22,1,.36,1); }
+  /* caption sits below the image instead of hovering over it — a column
+     stack per card, image taking whatever height the caption leaves it */
+  .work-card { width: 100%; flex: none; display: flex; flex-direction: column; gap: .5rem; cursor: grab; background: none; }
+  .work-card-image { width: 100%; flex: 1; min-height: 0; }
+  .work-card-overlay { position: static; inset: auto; padding: .1rem 0 0; background: none; opacity: 1; }
+  .work-card-year { color: #777b00; }
+  .work-card-title { color: var(--ink); }
+  /* the arrow link only made sense as a "next section" cue for the old
+     scroll-jacked carousel; the timed/swipeable slider doesn't need it,
+     and removing it frees the vertical space back to the gallery */
+  .work-next { display: none; }
+  /* filters become a thin, horizontally-scrollable strip (desktop instead
+     wraps them onto multiple lines, since it has the width to spare);
+     scrollbar hidden (still scrollable by touch/drag) so it doesn't read
+     as a stray colored bar under the row */
+  .work-categories { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: .5rem; padding: .15rem .15rem .4rem; scrollbar-width: none; }
+  .work-categories::-webkit-scrollbar { display: none; }
+  .work-category-box { flex: none; font-size: 1.05rem; }
+  .work-next { position: static; flex-direction: row; align-self: center; }
+  .contact { grid-template-columns: 1fr; gap: 3rem; }
+  .contact-face { width: 54vw; }
+  .contact-legal { left: var(--gutter); }
+  /* the -80px lift is a desktop-only trick to vertically balance the timeline
+     against the taller intro column when they sit side by side; once
+     about-columns wraps to a single stack here, that offset instead drags the
+     timeline up into the intro text above it */
+  .about-timelines { transform: none; }
+}

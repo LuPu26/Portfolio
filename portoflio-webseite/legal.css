@@ -1,0 +1,49 @@
+/* Shared typography for the standalone legal pages (Impressum, Datenschutz).
+   Layered on top of style.css, which already provides the nav, color
+   tokens, fonts and body reset — this file only adds the reading layout. */
+
+.legal-main {
+  padding: clamp(6rem, 12vh, 8rem) var(--gutter) 6rem var(--content-safe);
+  max-width: 62rem;
+}
+
+.legal-title {
+  margin: 0 0 2.5rem;
+  font: 700 var(--fs-h1) var(--font-display);
+  line-height: 1.05;
+}
+
+@media (max-width: 1080px) {
+  .legal-main { padding-left: var(--gutter); }
+  .legal-title { font-size: clamp(2.2rem, 9vw, 3.2rem); }
+  .site-footer { padding-left: var(--gutter); }
+}
+
+.legal-section {
+  max-width: 60ch;
+  margin: 0 0 2.75rem;
+}
+
+.legal-section:last-of-type { margin-bottom: 0; }
+
+.legal-section h2 {
+  margin: 0 0 .9rem;
+  font: 700 var(--fs-h2) var(--font-display);
+}
+
+.legal-section h3 {
+  margin: 1.4rem 0 .5rem;
+  font: 700 clamp(1.05rem, 1.6vw, 1.2rem) var(--font-display);
+}
+
+.legal-section p {
+  margin: 0 0 1rem;
+  font: 400 var(--fs-body) var(--font-text);
+  line-height: 1.65;
+  color: #3d3d33;
+}
+
+.legal-section p:last-child { margin-bottom: 0; }
+
+.legal-section a { text-decoration: underline; text-underline-offset: .15em; }
+.legal-section a:hover { color: #777b00; }

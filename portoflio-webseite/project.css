@@ -1,0 +1,580 @@
+:root {
+  --paper: #fefff6;
+  --ink: #11110f;
+  --acid: #dfe72e;
+  --pink: #ebcbe3;
+  --red: #f23800;
+  --maroon: #59172d;
+  --lavender: #beb1d4;
+  --gutter: clamp(1.25rem, 5vw, 6rem);
+  --nav-w: 2.75rem;
+  --content-safe: calc(var(--gutter) + var(--nav-w) + 1.25rem);
+  --section-gap: clamp(2.5rem, 6vw, 5rem);
+
+  /* type system, shared with style.css: exactly 4 categories, each a fixed
+     family+weight pair everything on the site must match. H1 = display/400,
+     appears exactly once (the hero title, untouched here). H2 = display/700,
+     every other heading, boxed or not. Fließtext = text/400, all body copy.
+     Button = display/700 + uppercase, reserved for anything meant to read as
+     clickable UI (filled boxes, nav links, tag labels) — sizes vary by context
+     (a nav link isn't sized like a filled CTA) but family+weight+case never do.
+     H2 sits a half golden-ratio step (√1.618) above body; Button was dialed
+     down a further full step below that, so it no longer moves in lockstep
+     with H2. */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-text: 'DM Sans', sans-serif;
+  --fs-ratio: 1.618;
+  --fs-ratio-step: 1.272;
+  --fs-body: 1rem;
+  --fs-h2: calc(var(--fs-body) * var(--fs-ratio-step) * var(--fs-ratio-step));
+  --fs-button: calc(var(--fs-body) * var(--fs-ratio-step) / var(--fs-ratio));
+  --fs-h1: calc(var(--fs-body) * 4.236);
+}
+
+* { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+::-webkit-scrollbar { display: none; }
+
+/* deferred images (project.js only sets their real src once they actually
+   scroll into view — see the IntersectionObserver there): a shimmering
+   placeholder fills the box so loading is visible, and once the observer
+   fires the image rises up from below into its final spot; the shimmer then
+   just gets swapped out for the decoded photo underneath it once it arrives.
+   carousel .slide images keep their own crossfade (is-active) on top of this */
+@keyframes img-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+img[data-src] {
+  background: linear-gradient(100deg, rgba(17,17,15,.05) 30%, rgba(17,17,15,.12) 50%, rgba(17,17,15,.05) 70%);
+  background-size: 200% 100%;
+  animation: img-shimmer 1.4s ease-in-out infinite;
+  translate: 0 6rem;
+  transition: translate 3s cubic-bezier(.16,1,.3,1);
+}
+/* carousel .slide images sit this opacity fade out — they're already opacity:0/1
+   toggled by .is-active (see the slider rules further down) and stacked via
+   position:absolute, so fading them in independently would show every slide at
+   once; they still get the shimmer + the further/slower rise above */
+img[data-src]:not(.slide) {
+  opacity: 0;
+  transition: translate 3s cubic-bezier(.16,1,.3,1), opacity 3s cubic-bezier(.16,1,.3,1);
+}
+img[data-src].is-entering { translate: 0 0; }
+img[data-src]:not(.slide).is-entering { opacity: 1; }
+img[data-src].is-loaded { animation: none; background: none; }
+@media (prefers-reduced-motion: reduce) {
+  img[data-src] { animation: none; translate: 0 0; opacity: 1; transition: none; }
+}
+
+/* the only scroll indicator on project pages: a reading-progress rail that
+   fills top-to-bottom with how much of the page you've actually scrolled
+   past — the native scrollbar is hidden above so there's just this one bar */
+.scroll-progress { position: fixed; top: 0; right: 0; z-index: 50; width: 4px; height: 100vh; background: rgba(0, 0, 0, .08); pointer-events: none; }
+.scroll-progress-fill { width: 100%; height: 0; background: var(--acid); }
+
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-text); font-size: 16px; overflow-x: hidden; }
+a { color: inherit; text-decoration: none; }
+
+/* nav — identical to index.html so it reads as the same site. Black by default (reads
+   fine on the paper and pink sections); a scroll-driven class switches it to white
+   whenever a red section is behind it. The line sits centered between MENUE and the
+   CONTACT/ABOUT ME/WORK group via matching flex-grow spacers on both sides of it. */
+.site-nav {
+  position: fixed;
+  z-index: 10;
+  top: 3.5rem;
+  left: calc((var(--content-safe) - var(--nav-w)) / 2);
+  width: var(--nav-w);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: calc(100vh - 7rem);
+  transition: color .25s ease;
+}
+.menu-button { writing-mode: vertical-rl; transform: rotate(180deg); color: var(--ink); font: 700 var(--fs-body) var(--font-display); letter-spacing: .1em; transition: color .25s ease; }
+/* flex:1 lets the line fill all the leftover height, pushing CONTACT/ABOUT ME/WORK
+   down flush with the nav's own bottom edge — so the gap below WORK matches the
+   gap above MENUE, both set by .site-nav's top/height */
+.menu-line { width: 1px; flex: 1; margin: 1.5rem 0; background: var(--ink); transition: background .25s ease; }
+.nav-links { display: flex; flex-direction: column; align-items: center; gap: 1.3rem; }
+.nav-links a { writing-mode: vertical-rl; transform: rotate(180deg); font: 400 var(--fs-body) var(--font-display); letter-spacing: .08em; color: var(--ink); transition: color .2s ease; }
+.nav-links a:hover { color: #777b00; }
+.site-nav.on-dark .menu-button { color: var(--paper); }
+.site-nav.on-dark .menu-line { background: var(--paper); }
+.site-nav.on-dark .nav-links a { color: var(--paper); }
+.site-nav.on-dark .nav-links a:hover { color: var(--acid); }
+/* legal links only ever show in the mobile dropdown (see the media query
+   below) — the desktop sidebar has no room, and CONTACT already covers
+   reaching out */
+.nav-links-legal { display: none; }
+
+/* hamburger button only exists for the mobile top-bar nav; hidden entirely on
+   desktop so the sidebar nav above is completely unaffected by its presence */
+.nav-toggle { display: none; }
+
+/* a badge is only "button"-colored (acid/pink) when it's actually clickable; a
+   plain white-filled badge is just a heading (H2), styled but not pressable */
+.section-heading.button {
+  display: inline-block;
+  align-self: flex-start;
+  margin: 0;
+  padding: .35rem .9rem;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  color: var(--ink);
+  font-size: var(--fs-h2);
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  font-weight: 700;
+  font-family: var(--font-display);
+}
+
+/* hero — full-bleed photo, nav floats on top like on the homepage. The image is
+   oversized and nudged by a fraction of the scroll offset for a simple parallax drift. */
+.project-hero { position: relative; height: 100svh; min-height: 34rem; overflow: hidden; background: #dcdcd2; }
+/* only relief wraps the section: on mobile its hero-overlay moves out of the
+   image section into normal flow below it (see the media query), so it
+   needs its own positioned ancestor to still anchor .hero-overlay's
+   absolute desktop placement — same box as .project-hero always was, so
+   desktop is unaffected either way */
+.project-hero-wrap { position: relative; }
+.project-hero .hero-parallax { position: absolute; top: -15%; left: 0; width: 100%; height: 130%; will-change: transform; }
+/* the <picture> wrapper (added so mobile can swap in a tighter-cropped source)
+   needs to behave like a plain block filling the parallax div, exactly as the
+   bare <img> did before it — otherwise picture's inline default could affect layout */
+.project-hero picture { display: block; width: 100%; height: 100%; }
+.project-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.project-hero::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(12, 7, 6, .65), rgba(12, 7, 6, 0) 55%); }
+
+/* the current relief hero photo is a wide studio shot with the piece sitting
+   right-of-centre and a calm empty stretch of backdrop on the left, built for
+   exactly this full-bleed slot: the shared cover treatment now works, just
+   with a smaller oversize buffer (this photo's own aspect already sits close
+   to the hero's, so the standard 130% buffer zoomed in more than it needed
+   to) and object-position biased right so any edge cropping eats into that
+   spare backdrop first rather than the piece or the chair. */
+.project-hero .hero-parallax.relief-hero-parallax { top: -6%; height: 112%; }
+.project-hero img.relief-hero-photo { object-position: 68% center; }
+
+/* pinned near the top of the pink-card section (#produkttext, which needs
+   position:relative for this) instead of sitting in the centered content flow,
+   so it reads as a top-of-section control rather than part of the card group.
+   pink/acid fill = a real, clickable link, sized as a proper button: bigger
+   than body copy, smaller than any heading */
+.hero-switcher { position: absolute; top: clamp(1.5rem, 5vw, 3rem); left: var(--content-safe); right: var(--content-safe); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+.hero-switcher a { display: inline-flex; align-items: center; gap: .5rem; padding: .8rem 1.4rem; border: 2px solid var(--ink); color: var(--ink); font: 700 var(--fs-button) var(--font-display); text-transform: uppercase; letter-spacing: .04em; }
+.hero-switcher a.prev { background: var(--pink); }
+.hero-switcher a.next { background: var(--acid); }
+
+/* text color here isn't preset — script.js measures the actual photo pixels
+   behind this block and toggles is-on-light only when black wins on contrast */
+.hero-overlay { position: absolute; z-index: 2; left: var(--content-safe); right: clamp(2rem, 14vw, 11rem); bottom: clamp(2.5rem, 7vw, 5rem); --overlay-fg: var(--paper); color: var(--overlay-fg); }
+.hero-overlay.is-on-light { --overlay-fg: var(--ink); }
+.hero-title { display: inline-block; margin: 0 0 1rem; font: 400 var(--fs-h1) var(--font-display); font-weight: inherit; }
+.hero-title a { color: inherit; text-decoration: none; }
+.hero-lead { margin: 0; max-width: 48ch; font: 400 var(--fs-body) var(--font-text); line-height: 1.6; }
+
+/* the project's own category tags — plain <span>s, not links, with no fill:
+   just a white outline and white text, so they read as labels, not buttons */
+.hero-tags { margin-top: 1.75rem; display: flex; flex-wrap: wrap; gap: .75rem; }
+.tag-box { display: inline-block; padding: .5rem 1rem; background: none; border: 1.5px solid var(--overlay-fg, var(--paper)); color: var(--overlay-fg, var(--paper)); font: 700 var(--fs-button) var(--font-display); text-transform: uppercase; letter-spacing: .02em; }
+
+.project-mark { position: absolute; z-index: 2; right: clamp(1.5rem, 4vw, 3rem); bottom: clamp(1.5rem, 4vw, 3rem); width: clamp(5.5rem, 8vw, 7rem); aspect-ratio: 1; border-radius: 50%; background: var(--maroon); overflow: hidden; display: grid; place-items: center; box-shadow: 0 .3rem .6rem rgba(0,0,0,.25); }
+.project-mark img { width: 82%; height: 82%; object-fit: contain; }
+/* a plain logo mark instead of the filled circle badge — just the mark
+   itself, floating directly on the hero photo */
+.project-mark--plain { background: none; box-shadow: none; }
+.project-mark--plain img { width: 100%; height: 100%; }
+
+.hero-mirrored { transform: scaleX(-1); }
+
+/* the big phone mockup: pulled up by a negative top margin so it already
+   overlaps the hero at scroll:0 (visible in the header from the start), then
+   locked in place via position:sticky as you scroll down. The buffer below
+   (100vh, matching .kontext-block's own pull-up) is sized so the phone
+   finishes releasing and fully scrolls away exactly as Context ends, instead
+   of lingering into the section after it */
+.hero-phone-wrap { position: relative; height: calc(100svh + 100vh); margin-top: -100svh; z-index: 5; pointer-events: none; }
+.hero-phone-inner { width: 50%; height: 100%; margin-left: 50%; display: flex; justify-content: center; }
+/* without this, the flex container's default align-items:stretch makes this
+   element as tall as the whole scroll-buffer wrapper, leaving sticky zero
+   room to actually travel — it'd just sit pinned to its own (huge) box,
+   which is indistinguishable from not being sticky at all */
+.hero-phone-group { position: sticky; top: 2rem; align-self: flex-start; pointer-events: auto; }
+.hero-phone-group .phone-mockup { width: auto; height: 80vh; aspect-ratio: 9 / 19.5; }
+
+/* an icon-only affordance instead of a labeled button: the crossed-out glyph
+   (current state: muted) pulses to invite the tap; once sound is on, it
+   switches to the plain speaker and goes still */
+.phone-sound-toggle { position: absolute; z-index: 2; top: 1.4rem; right: 1.1rem; width: 2.6rem; height: 2.6rem; display: grid; place-items: center; background: none; border: none; padding: 0; cursor: pointer; }
+.phone-sound-toggle svg { width: 100%; height: 100%; }
+.phone-sound-toggle .sound-icon-wave { opacity: 0; }
+.phone-sound-toggle:not(.is-on) svg { animation: sound-pulse 1.8s ease-in-out infinite; }
+.phone-sound-toggle.is-on .sound-icon-wave { opacity: 1; }
+.phone-sound-toggle.is-on .sound-icon-mute { opacity: 0; }
+@keyframes sound-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: .7; } }
+
+/* auto-advancing slider: slides are stacked via absolute positioning and
+   project.js toggles .is-active on a timer, crossfading between them. a fixed
+   max-width keeps every slider on the page the same physical size regardless
+   of which grid column it sits in. */
+.slider { position: relative; width: 100%; max-width: 28rem; overflow: hidden; border-radius: .5rem; }
+.slider .slide { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .6s ease; display: block; cursor: zoom-in; }
+.slider .slide.is-active { opacity: 1; }
+
+.slider-arrow { position: absolute; z-index: 3; top: 50%; transform: translateY(-50%); width: 2.25rem; height: 2.25rem; border: none; background: none; color: #fff; text-shadow: 0 .1rem .3rem rgba(0, 0, 0, .5); font-size: 1.2rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: .85; transition: opacity .2s ease; }
+.slider-arrow:hover { opacity: 1; }
+.slider-arrow.prev { left: .6rem; }
+.slider-arrow.next { right: .6rem; }
+
+/* click-to-enlarge overlay: the clicked slide's image, centered and scaled up,
+   over a 50%-black backdrop covering the rest of the page */
+.lightbox { position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center; padding: 3rem; background: rgba(0, 0, 0, .5); cursor: zoom-out; }
+.lightbox.is-open { display: flex; }
+.lightbox-img { max-width: 90vw; max-height: 90vh; object-fit: contain; box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, .45); }
+.lightbox-video { max-width: 90vw; max-height: 90vh; box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, .45); }
+
+/* shared block rhythm for the folder-mapped sections below — each is capped at exactly
+   one screen (not "at least"), centering shorter content vertically with whitespace;
+   overflow:hidden guarantees the cap holds even if content runs long. left and right
+   padding match so the frame is symmetric. margin-top gives every section the same
+   breathing room from the one before it (the contact footer matches it separately,
+   since it isn't a .block) */
+.block { height: 100svh; overflow: hidden; margin-top: var(--section-gap); display: flex; flex-direction: column; justify-content: center; padding: clamp(2rem, 5vw, 3.5rem) var(--content-safe) clamp(2rem, 5vw, 3.5rem) var(--content-safe); }
+
+/* context — its own full-screen statement, with a small gallery of process
+   photos beside it */
+.kontext-block { position: relative; background: var(--paper); color: var(--ink); }
+/* MUJU only (the only page with this phone wrapper before Context): pulled
+   up by the phone's entire scroll-buffer amount, so it starts right where
+   the hero ends — plus the same section-gap every other section gets —
+   while the phone stays pinned in view alongside it */
+.hero-phone-wrap + .kontext-block { margin-top: calc(var(--section-gap) - 100vh); }
+/* MUJU only: the video is still sticky-pinned over the top of #kontext for
+   most of its scroll, so the prev/next switcher can't live up there like on
+   every other project page without getting covered by it — moved one section
+   later, to the top of #produkttext, in normal flow (not absolute) so it
+   pushes the case copy down instead of overlapping it */
+.switcher-top .hero-switcher { position: static; margin-bottom: clamp(1.5rem, 4vw, 2.5rem); }
+.kontext-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: clamp(2rem, 5vw, 3.5rem); align-items: center; width: 100%; }
+.kontext-grid-solo { grid-template-columns: 1fr; max-width: 46rem; }
+/* heading sits directly above the body copy, using the same gap as the
+   homepage's about-copy heading-to-paragraph spacing; the photo grid then
+   centers vertically against this whole column via kontext-grid's align-items */
+.kontext-copy { display: flex; flex-direction: column; gap: clamp(1rem, 2.2vw, 1.9rem); }
+.kontext-text { margin: 0; font: 400 var(--fs-body) var(--font-text); line-height: 1.6; }
+
+/* software used for the project — a plain row of grey brand icons, low-key
+   enough to sit under the context copy without competing with it */
+.tools-used-block { display: flex; flex-direction: column; gap: .9rem; }
+.tools-used-label { margin: 0; font: 700 var(--fs-body) var(--font-text); text-transform: uppercase; letter-spacing: .02em; }
+.tools-used { display: flex; align-items: center; gap: 1.1rem; }
+.tools-used img { width: 1.75rem; height: 1.75rem; display: block; }
+/* an auto-advancing slider instead of a static gallery — project.js crossfades
+   between the stacked slides on a timer */
+.kontext-photos.slider { max-width: none; aspect-ratio: 5 / 4; }
+.kontext-photos .slide { object-fit: cover; }
+/* cinema's context photo is a single reference diagram, not a gallery — skip
+   the slider machinery entirely rather than running a 1-slide slider. its
+   aspect ratio doesn't match the 5:4 box, and it's a flat diagram rather than
+   a photo, so object-fit:contain (with the box's own paper backdrop showing
+   through) reads better here than cropping into the seat rows */
+.kontext-photos:not(.slider) { max-width: none; aspect-ratio: 5 / 4; border-radius: .5rem; overflow: hidden; background: var(--paper); }
+.kontext-photos:not(.slider) img { width: 100%; height: 100%; object-fit: contain; display: block; cursor: zoom-in; }
+
+/* a phone mockup + looping clip instead of a photo slider, for projects whose
+   interaction only reads as motion (and, here, sound) */
+.phone-mockup { position: relative; width: min(16rem, 60vw); aspect-ratio: 9 / 19.5; background: #000; border: 3px solid var(--ink); border-radius: 2.2rem; padding: .5rem; box-shadow: 0 1rem 2rem rgba(0, 0, 0, .25); }
+.phone-video { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 1.6rem; background: #000; cursor: zoom-in; }
+.phone-notch { position: absolute; z-index: 1; top: .5rem; left: 50%; width: 34%; height: .55rem; background: #000; border-radius: .4rem; transform: translateX(-50%); }
+
+/* product text — numbered pink cards instead of a section heading, each one
+   as wide as the section's own content width (matching kontext-grid) and
+   stacked, rather than split into half-width columns. position:relative
+   anchors the prev/next switcher pinned near its top */
+#produkttext { position: relative; }
+.case-copy { width: 100%; display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+.case-copy article { background: var(--pink); padding: 1.6rem 1.9rem; }
+.case-copy article h3 { margin: 0 0 .6rem; font: 700 var(--fs-h2) var(--font-display); }
+.case-copy article p { margin: 0; font: var(--fs-body) var(--font-text); line-height: 1.7; color: #3d3d33; }
+.case-copy article ul { margin: 0 0 1rem; padding-left: 1.2em; font: var(--fs-body) var(--font-text); line-height: 1.7; color: #3d3d33; }
+.case-copy article li { margin-bottom: .4rem; }
+.step-num { font-weight: 700; }
+
+/* a reference image running the full height of the card, flush against its
+   top/right/bottom edge (negative margins exactly cancel the article's own
+   padding on those three sides) instead of sitting inside it — the text
+   column next to it shrinks to make room, rather than the image sitting
+   inside the text's own space */
+.case-with-image { display: flex; gap: 1rem; }
+.case-with-image-copy { flex: 1; min-width: 0; }
+.case-with-image > .zoomable-image { flex: 0 0 auto; width: 32%; max-width: 10rem; align-self: stretch; object-fit: cover; cursor: zoom-in; margin: -1.6rem -1.9rem -1.6rem 0; }
+
+/* prototyping & solution — sketch and text side by side, sketch as the bigger column */
+.sketch-block { background: var(--red); color: var(--paper); }
+.sketch-layout { display: grid; grid-template-columns: 1.3fr 1fr; gap: clamp(2.5rem, 6vw, 4.5rem); align-items: center; width: 100%; }
+.sketch-layout img { width: 100%; display: block; }
+
+/* relief's Blender render is a tall portrait photo, unlike the wide
+   sketches this block is otherwise built for — without a cap it overflows
+   the section's fixed height and gets cropped by .block's overflow:hidden,
+   so this scales it down and lets it sit fully visible instead */
+.sketch-layout img.sketch-photo-contain { width: auto; max-width: 100%; max-height: min(85vh, 42rem); object-fit: contain; margin: 0 auto; }
+
+/* cinema's Analysis text calls out "the picture on the right" — copy first,
+   image second, with the ratio flipped so the image column stays the
+   bigger one even sitting second */
+.sketch-layout-reverse { grid-template-columns: 1fr 1.3fr; }
+
+/* the two reference graphics differ wildly in aspect ratio and are both
+   white line art on a transparent background, drawn to sit directly on the
+   section's own red — so object-fit:contain instead of the crop-to-fill
+   treatment other sliders on this page use, no backdrop of its own */
+.sketch-slider { max-width: none; aspect-ratio: 4 / 5; background: none; }
+.sketch-slider .slide { object-fit: contain; }
+.sketch-copy h3 { margin: 0 0 .6rem; font: 700 var(--fs-h2) var(--font-display); }
+.sketch-copy p { margin: 0; font-size: var(--fs-body); line-height: 1.7; }
+
+/* remaining process shots from Implementation, laid out as a full-bleed
+   filmstrip: no side padding (spans the whole viewport width), all images the
+   same height, flush against each other with no gap. flex-basis:0 (not an
+   explicit width, which fights flex-basis for the main-axis size and left the
+   first image sized to its own intrinsic width instead of stretching) is what
+   makes every image share the row equally regardless of its own aspect ratio */
+.process-gallery-section { margin-top: var(--section-gap); }
+.process-gallery { display: flex; gap: 0; }
+.process-gallery img { flex: 1 1 0; min-width: 0; height: 12rem; display: block; object-fit: cover; cursor: zoom-in; }
+
+/* cinema's sales-process diagram sits under the Analysis paragraph — white
+   line art on a transparent background, drawn to sit directly on the
+   section's own red, same treatment as the sketch diagrams elsewhere */
+.sketch-image { margin-top: 1.5rem; }
+
+/* device mockup — a flat monitor silhouette (no photorealism, matching the
+   site's own geometric line-art look) standing in for "viewed on desktop" */
+.device-mockup--desktop { display: flex; flex-direction: column; align-items: center; width: 78%; margin: 0 auto; }
+/* matches the booking screenshot's own ratio (1044x764) exactly, so the
+   screen frame doesn't letterbox it */
+.device-screen { width: 100%; aspect-ratio: 1044 / 764; background: #0b1220; border: .5rem solid var(--ink); border-radius: .35rem; overflow: hidden; }
+.device-screen img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.device-stand { width: 12%; height: 1.4rem; background: var(--ink); }
+.device-base { width: 32%; height: .5rem; border-radius: .25rem; background: var(--ink); }
+
+/* outcome & product */
+.outcome-layout { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 5vw, 3.5rem); align-items: center; width: 100%; }
+.outcome-slider { aspect-ratio: 4 / 5; background: var(--paper); }
+.outcome-slider .slide { object-fit: cover; }
+/* cinema's redesign slider mixes a device photo, a flat diagram and a colour
+   swatch — very different shapes that a crop-to-fill treatment would cut
+   into, so it gets object-fit:contain instead of the cover crop other
+   outcome-sliders on the site use for real before/after photos. it also
+   drops the shared 28rem slider cap and takes a bigger share of the grid,
+   since it's the main visual for this section rather than one of a pair */
+#redesign .outcome-layout { grid-template-columns: 1.4fr 1fr; }
+#redesign .outcome-slider { max-width: none; width: 90%; margin: 0 auto; }
+#redesign .outcome-slider .slide { object-fit: contain; }
+/* the bear sits off-center in its source photo — shift the crop window right
+   so the plush toy itself reads centered instead of the empty space beside it */
+.outcome-slider .slide-bear { object-position: 100% 50%; }
+/* MUJU's outcome photo is a single background-removed cutout, not a slider —
+   object-fit:contain instead of the cover crop, so the whole shot (and its
+   transparent edges) stays visible instead of getting cropped into the 4:5 box */
+.outcome-single { aspect-ratio: auto; background: none; }
+.outcome-single img { width: auto; max-width: 100%; max-height: min(85vh, 42rem); object-fit: contain; display: block; margin: 0 auto; }
+.outcome-text h3 { margin: 0 0 .5rem; font: 700 var(--fs-h2) var(--font-display); }
+.outcome-text p { margin: 0; font: var(--fs-body) var(--font-text); line-height: 1.6; color: #3d3d33; }
+.outcome-text p + p { margin-top: 1rem; }
+
+/* contact — copied 1:1 from the homepage for visual parity */
+.contact { position: relative; height: 100svh; overflow: hidden; margin-top: var(--section-gap); display: grid; grid-template-columns: 1fr 1fr; align-content: center; gap: 5rem; background: var(--red); color: var(--paper); padding: clamp(2rem, 6vw, 3.5rem) var(--content-safe) clamp(2rem, 6vw, 3.5rem) var(--content-safe); }
+.contact-legal { position: absolute; left: var(--content-safe); bottom: 1.5rem; display: flex; gap: .6rem; font: 400 .8rem var(--font-text); color: var(--paper); opacity: .75; }
+.contact-legal a { color: inherit; }
+.contact-legal a:hover { color: var(--acid); }
+.contact-copy { display: flex; flex-direction: column; align-items: flex-start; gap: clamp(1rem, 2.2vw, 1.9rem); }
+.contact-copy p { margin: 0; }
+/* green fill = a real, clickable link, so it gets the button size/style
+   instead of a plain underline */
+.contact-cta { display: inline-block; padding: .8rem 1.4rem; background: var(--acid); border: 2px solid var(--ink); color: var(--ink); font: 700 var(--fs-button) var(--font-display); text-transform: uppercase; letter-spacing: .02em; }
+.contact-form { display: grid; gap: .35rem; }
+.contact-form input, .contact-form textarea { width: 100%; border: 2px solid var(--paper); border-radius: 0; background: transparent; color: var(--paper); font: inherit; padding: .65rem .75rem; outline: none; }
+.contact-form input::placeholder, .contact-form textarea::placeholder { color: rgba(254, 255, 246, .65); }
+.contact-form input:focus, .contact-form textarea:focus { box-shadow: 4px 4px 0 var(--paper); }
+.contact-form textarea { min-height: 7rem; resize: vertical; }
+.contact-form button { justify-self: start; border: 2px solid var(--ink); background: var(--acid); color: var(--ink); cursor: pointer; padding: .8rem 1.4rem; font: 700 var(--fs-button) var(--font-display); text-transform: uppercase; letter-spacing: .02em; }
+.contact-face { width: clamp(16rem, 24vw, 22rem); height: auto; transform: rotate(-6deg); filter: drop-shadow(0 .5rem .4rem rgba(0, 0, 0, .25)); }
+.form-status { font-size: .85rem; min-height: 1.3em; color: var(--paper); }
+
+@media (max-width: 1080px) {
+  /* matches the same reduction on the homepage — every heading here (section
+     badges, the pink case-study card titles) reads off --fs-h2 */
+  :root {
+    --fs-h2: calc(var(--fs-body) * var(--fs-ratio-step) * var(--fs-ratio-step) * 0.8);
+    --mobile-nav-h: 3.75rem;
+  }
+
+  /* the desktop's vertical sidebar collapses into a fixed top bar: HOME stays
+     at the left edge, CONTACT/ABOUT ME/WORK move into a hamburger-triggered
+     dropdown at the right. The bar is opaque, so content needs top clearance
+     (reserved via body padding) and the nav no longer needs to swap to light
+     text over dark sections — it always sits above them now, not over them. */
+  body { padding-top: var(--mobile-nav-h); }
+  .site-nav {
+    flex-direction: row;
+    align-items: center;
+    top: 0;
+    left: 0;
+    width: 100%;
+    /* matches body's padding-top exactly, so there's no sub-pixel sliver
+       between the nav's own background and the page content below it */
+    height: var(--mobile-nav-h);
+    padding: 0 1.25rem;
+    background: var(--paper);
+  }
+  .menu-button { writing-mode: horizontal-tb; transform: none; }
+  .menu-line { display: block; width: auto; height: 1px; flex: 1; margin: 0 1.1rem; }
+  .nav-toggle { display: flex; flex-direction: column; justify-content: center; gap: .3rem; width: 1.9rem; height: 1.4rem; background: none; border: none; padding: 0; cursor: pointer; }
+  .nav-toggle-bar { display: block; width: 100%; height: 2px; background: var(--ink); transition: transform .25s ease, opacity .2s ease; }
+  .site-nav.is-open .nav-toggle-bar:nth-child(1) { transform: translateY(.85rem) rotate(45deg); }
+  .site-nav.is-open .nav-toggle-bar:nth-child(2) { opacity: 0; }
+  .site-nav.is-open .nav-toggle-bar:nth-child(3) { transform: translateY(-.85rem) rotate(-45deg); }
+  .nav-links {
+    position: fixed;
+    top: var(--mobile-nav-h);
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    max-height: 0;
+    overflow: hidden;
+    background: var(--paper);
+    border-bottom: 2px solid transparent;
+    transition: max-height .25s ease, border-color .25s ease;
+  }
+  .site-nav.is-open .nav-links { max-height: 16rem; border-bottom-color: var(--ink); }
+  .nav-links a { writing-mode: horizontal-tb; transform: none; padding: 1rem 1.25rem; border-top: 1px solid rgba(17, 17, 15, .12); }
+  .site-nav.on-dark .menu-button,
+  .site-nav.on-dark .nav-links a { color: var(--ink); }
+  .site-nav.on-dark .menu-line { background: var(--ink); }
+  /* Impressum/Datenschutz ride along in the same dropdown as CONTACT/ABOUT
+     ME/WORK, but read as secondary: smaller body copy instead of the bold
+     display font the real nav items use, so they don't compete with them */
+  .nav-links-legal { display: flex; gap: .6rem; padding: .85rem 1.25rem 1.1rem; border-top: 1px solid rgba(17, 17, 15, .12); }
+  .nav-links-legal a { font: 400 .8rem var(--font-text); letter-spacing: normal; opacity: .7; padding: 0; border-top: none; }
+
+  .project-hero { height: 82vh; min-height: 26rem; }
+  /* desktop's 68%-biased cover crop is tuned for a wide landscape box: on a
+     narrow portrait one it zooms in so far right that it loses the photo's
+     own empty backdrop on the left, where the title/text needs to sit.
+     Anchoring left instead keeps that backdrop in view on the left. */
+  .project-hero img.relief-hero-photo { object-position: left center; }
+  /* a shorter hero band, just for this photo: cover always crops to the
+     box's own aspect, and the standard 82vh-tall, full-width mobile box is
+     so much narrower than this photo's wide landscape shot that showing
+     the backdrop AND the whole hanger at once is impossible at that aspect
+     — one always crowds out the other. A shallower band needs less width
+     relative to its height to "cover", so both fit side by side. The title/
+     text below no longer fits as an absolute overlay on top of a band this
+     short, so it drops into normal flow underneath instead — image on top,
+     full width, then the text on the plain page background below it,
+     rather than crammed on top of (and clipped by) the photo. */
+  .relief-hero-section { height: 34vh; min-height: 13rem; }
+  .relief-hero-section::before { display: none; }
+  .relief-hero-wrap .hero-overlay {
+    position: static;
+    left: auto; right: auto; bottom: auto;
+    max-width: none;
+    padding: 1.5rem var(--gutter) 0;
+    --overlay-fg: var(--ink);
+  }
+  .hero-switcher { left: var(--gutter); right: var(--gutter); }
+  .hero-switcher a { padding: .55rem .9rem; font-size: .7rem; }
+  .hero-overlay { left: var(--gutter); right: 1.5rem; }
+  /* on a narrow screen every grid below stacks to one column, so a hard 100svh cap
+     would start cropping real content — let these sections grow instead. The fixed
+     top bar now takes real layout space (via body's own padding-top above), so
+     "one screen" per section means the viewport height minus that bar, not the
+     full 100svh — otherwise every section ran one bar's-height too tall */
+  .block, .contact { height: auto; min-height: calc(100svh - var(--mobile-nav-h)); overflow: visible; }
+  .block { padding-left: var(--gutter); padding-right: var(--gutter); }
+  /* the single short Problem card doesn't need the same near-full-screen
+     floor as every other (multi-card) block on this page */
+  #produkttext.block { min-height: 0; }
+  /* on desktop this floats absolutely near the top of the section because
+     the section is a fixed-height, vertically-centered box — the switcher
+     can assume there's clear space above the centered content. Once .block
+     grows to fit its content instead (right above), that assumption breaks:
+     the switcher just overlays whatever now happens to be at the top (the
+     Context heading). Same fix as .switcher-top already uses for MUJU: put
+     it back in normal flow so it pushes the heading down instead */
+  .hero-switcher { position: static; margin-bottom: clamp(1.5rem, 4vw, 2.5rem); }
+  .kontext-grid { grid-template-columns: 1fr; }
+  /* cinema seat plan's Context photo is the actual reference diagram the
+     text is explaining — stacked, it reads better seen first with the
+     explanation following, unlike the other pages' documentary process
+     photos where the text-then-gallery order still makes sense */
+  .kontext-grid-gallery-first .kontext-photos { order: -1; }
+  /* stacked, the slider and its copy no longer need the desktop's generous
+     side-by-side gap — tighten it — and rather than stretching edge to edge
+     as a lone column, the pair reads better as one compact, centered group */
+  .sketch-layout { grid-template-columns: 1fr; gap: 1.25rem; max-width: 28rem; margin: 0 auto; }
+  .process-gallery img { height: 6rem; }
+  /* the desktop aspect-ratio (4:5, portrait) is tuned for sharing a row with
+     text; MUJU's own diagrams are close to square (2841x2586), so boxing them
+     into that portrait ratio here left tall empty bands above and below the
+     actual artwork — which read as a much bigger gap to the text below it
+     than the grid gap above actually sets. Scoped via .muju-sketch (rather
+     than the #anwendung id, which every project page reuses for this same
+     section) so it doesn't leak into other pages' own sketch-sliders */
+  .muju-sketch .sketch-slider { aspect-ratio: 2841 / 2586; }
+  .outcome-layout { grid-template-columns: 1fr; }
+  .contact { grid-template-columns: 1fr; gap: 3rem; padding-left: var(--gutter); padding-right: var(--gutter); }
+  .contact-face { width: 50vw; }
+  .contact-legal { left: var(--gutter); }
+
+  /* MUJU's product video: on desktop it's a phone mockup pinned over the hero
+     via a sticky/negative-margin trick (untouched above — that's still the
+     desktop design). On mobile there isn't room for that overlap without the
+     phone covering the hero text, so the frame comes off entirely and the
+     clip becomes a plain full-bleed section of its own, sitting in normal
+     flow between the hero and Context instead of pinned on top of either. */
+  .hero-phone-wrap { position: static; height: auto; margin-top: 0; pointer-events: auto; }
+  .hero-phone-inner { width: 100%; height: auto; margin-left: 0; display: block; }
+  .hero-phone-group { position: static; }
+  .hero-phone-group .hero-phone {
+    width: 100%;
+    height: 60vh;
+    min-height: 18rem;
+    aspect-ratio: auto;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+    background: #000;
+  }
+  .hero-phone-group .hero-phone .phone-video { border-radius: 0; }
+  .hero-phone-group .hero-phone .phone-notch { display: none; }
+  /* the negative-margin pull-up above only makes sense while the video sits
+     pinned over the hero; once it's a normal in-flow section, Context just
+     gets the usual section gap like every other block. Context's own text is
+     short, so also drop the shared min-height:100svh cap set above — that was
+     leaving a large empty gap above and below it on a narrow screen */
+  .hero-phone-wrap + .kontext-block { margin-top: var(--section-gap); min-height: auto; }
+
+  /* "01 Insight & Goal": the image runs beside the text as a flush-edge strip
+     on desktop (untouched above). On a narrow column there's no room for that
+     side-by-side split, so it stacks instead — image on top, text below,
+     inset by the same left/right padding as the rest of the card instead of
+     bleeding to its edge */
+  .case-with-image { flex-direction: column-reverse; gap: 1rem; }
+  .case-with-image > .zoomable-image {
+    width: 100%;
+    max-width: none;
+    height: auto;
+    align-self: auto;
+    margin: 0;
+  }
+}
