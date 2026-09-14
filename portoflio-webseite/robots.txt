@@ -1,7 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /index-alternative.html
-Disallow: /project-onequarter.html
-Disallow: /unused-assets/
-
-Sitemap: https://lucazoe.com/sitemap.xml
