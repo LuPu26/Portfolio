@@ -45,11 +45,18 @@
     </div>
   </nav>
 
-  <main>
+  <main class="relief-main">
     <div class="project-hero-wrap relief-hero-wrap">
       <section class="project-hero relief-hero-section" data-nav-theme="dark" aria-label="Project hero">
         <div class="hero-parallax relief-hero-parallax">
-          <img decoding="async" fetchpriority="high" class="relief-hero-photo" src="projects/04-hangers-relief/hero/relief-hero.jpg" alt="Relief, a wave-shaped wooden hanger, holding shirts and a red knit sweater, standing next to a director's chair, on a wide studio backdrop" data-nav-luminance="0.748" data-bg-luminance="0.678">
+          <picture>
+            <source media="(max-width: 1080px)" srcset="projects/04-hangers-relief/hero/relief-final-prototype_mobil.jpg">
+            <img decoding="async" fetchpriority="high" class="relief-hero-photo" src="projects/04-hangers-relief/hero/relief-hero.jpg" alt="Relief, a wave-shaped wooden hanger, holding shirts and a red knit sweater, standing next to a director's chair, on a wide studio backdrop" data-nav-luminance="0.748" data-bg-luminance="0.678">
+          </picture>
+        </div>
+        <div class="hero-swipe-hint" aria-hidden="true">
+          <span class="hero-swipe-arrow prev">&lt;</span>
+          <span class="hero-swipe-arrow next">&gt;</span>
         </div>
       </section>
       <div class="hero-overlay">

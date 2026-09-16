@@ -213,7 +213,12 @@ const updateHeroContrast = () => {
   let luminance = rawColor ? relativeLuminance(blendGradientOverlay(rawColor, rect)) : null;
   if (luminance === null && heroPhotoImg.dataset.bgLuminance) luminance = Number(heroPhotoImg.dataset.bgLuminance);
   if (luminance === null) return;
-  heroOverlay.classList.toggle('is-on-light', bestTextColor(luminance) === '#000');
+  const onLight = bestTextColor(luminance) === '#000';
+  heroOverlay.classList.toggle('is-on-light', onLight);
+  // mirrored onto the hero section itself too — it drives the mobile-only
+  // full-hero contrast scrim in project.css (.project-hero.is-on-light::after),
+  // which needs the same black/white call the text itself just made
+  heroSection.classList.toggle('is-on-light', onLight);
 };
 window.addEventListener('scroll', updateHeroContrast, { passive: true });
 window.addEventListener('resize', updateHeroContrast);
@@ -350,3 +355,35 @@ document.querySelectorAll('.phone-sound-toggle').forEach((button) => {
   });
   sync();
 });
+
+// swipe left/right anywhere on a project page to jump to the next/previous
+// project — mirrors the prev/next links already in .hero-switcher (MUJU has
+// two copies of that switcher, one hidden per breakpoint; either's links work
+// since both point at the same URLs). Ignored when the swipe starts inside a
+// photo slider or the lightbox, so it doesn't fight with gallery browsing.
+const prevProjectLink = document.querySelector('.hero-switcher a.prev');
+const nextProjectLink = document.querySelector('.hero-switcher a.next');
+if (prevProjectLink || nextProjectLink) {
+  const SWIPE_MIN_DISTANCE = 60;
+  let swipeStartX = null;
+  let swipeStartY = null;
+  document.addEventListener('touchstart', (event) => {
+    if (event.target.closest('.slider, .lightbox, .contact-form')) {
+      swipeStartX = null;
+      return;
+    }
+    const touch = event.touches[0];
+    swipeStartX = touch.clientX;
+    swipeStartY = touch.clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', (event) => {
+    if (swipeStartX === null) return;
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - swipeStartX;
+    const dy = touch.clientY - swipeStartY;
+    swipeStartX = null;
+    if (Math.abs(dx) < SWIPE_MIN_DISTANCE || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    const target = dx < 0 ? nextProjectLink : prevProjectLink;
+    if (target) window.location.href = target.href;
+  }, { passive: true });
+}

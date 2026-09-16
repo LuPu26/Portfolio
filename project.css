@@ -149,15 +149,14 @@ a { color: inherit; text-decoration: none; }
 .project-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .project-hero::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(12, 7, 6, .65), rgba(12, 7, 6, 0) 55%); }
 
-/* the current relief hero photo is a wide studio shot with the piece sitting
-   right-of-centre and a calm empty stretch of backdrop on the left, built for
-   exactly this full-bleed slot: the shared cover treatment now works, just
-   with a smaller oversize buffer (this photo's own aspect already sits close
-   to the hero's, so the standard 130% buffer zoomed in more than it needed
-   to) and object-position biased right so any edge cropping eats into that
-   spare backdrop first rather than the piece or the chair. */
-.project-hero .hero-parallax.relief-hero-parallax { top: -6%; height: 112%; }
-.project-hero img.relief-hero-photo { object-position: 68% center; }
+/* relief only: the photo itself (piece + chair on a plain studio backdrop)
+   matters more than filling every pixel of the hero, so it's shown in full
+   (object-fit:contain) instead of the shared cover crop other project heroes
+   use. No oversize buffer needed since nothing is being cropped; the section's
+   own background (below) is matched to the photo's studio backdrop so the
+   letterboxed edges blend in seamlessly at any viewport ratio. */
+.project-hero .hero-parallax.relief-hero-parallax { top: 0; height: 100%; }
+.project-hero img.relief-hero-photo { object-fit: contain; object-position: center; background: #dcdcde; }
 
 /* pinned near the top of the pink-card section (#produkttext, which needs
    position:relative for this) instead of sitting in the centered content flow,
@@ -190,6 +189,15 @@ a { color: inherit; text-decoration: none; }
 .project-mark--plain img { width: 100%; height: 100%; }
 
 .hero-mirrored { transform: scaleX(-1); }
+
+/* mobile-only affordance hinting that a left/right swipe jumps to the other
+   project (see the touch handler in project.js) — hidden on desktop, where
+   swipe navigation doesn't apply. Colored to match the hero text itself
+   (.project-hero.is-on-light is mirrored onto this same element by
+   project.js, alongside .hero-overlay's own copy of that class) */
+.hero-swipe-hint { display: none; }
+.hero-swipe-arrow { font: 400 1.7rem var(--font-display); line-height: 1; color: var(--paper); }
+.project-hero.is-on-light .hero-swipe-arrow { color: var(--ink); }
 
 /* the big phone mockup: pulled up by a negative top margin so it already
    overlaps the hero at scroll:0 (visible in the header from the start), then
@@ -224,6 +232,11 @@ a { color: inherit; text-decoration: none; }
 .slider { position: relative; width: 100%; max-width: 28rem; overflow: hidden; border-radius: .5rem; }
 .slider .slide { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .6s ease; display: block; cursor: zoom-in; }
 .slider .slide.is-active { opacity: 1; }
+/* stacked slides all sat at the same inset with no pointer-events distinction,
+   so a click always hit whichever slide happened to be last in the DOM
+   (topmost in paint order) instead of the one actually visible — only the
+   active slide should be clickable */
+.slider .slide:not(.is-active) { pointer-events: none; }
 
 .slider-arrow { position: absolute; z-index: 3; top: 50%; transform: translateY(-50%); width: 2.25rem; height: 2.25rem; border: none; background: none; color: #fff; text-shadow: 0 .1rem .3rem rgba(0, 0, 0, .5); font-size: 1.2rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: .85; transition: opacity .2s ease; }
 .slider-arrow:hover { opacity: 1; }
@@ -253,12 +266,23 @@ a { color: inherit; text-decoration: none; }
    the hero ends — plus the same section-gap every other section gets —
    while the phone stays pinned in view alongside it */
 .hero-phone-wrap + .kontext-block { margin-top: calc(var(--section-gap) - 100vh); }
+/* relief only, desktop only: Context sits directly above the numbered
+   Concept/Research/Prototyping cards, so the default --section-gap between
+   them reads as too much empty space compared to every other transition on
+   the page */
+.relief-main #produkttext.block { margin-top: clamp(1.5rem, 3vw, 2.5rem); }
 /* MUJU only: the video is still sticky-pinned over the top of #kontext for
    most of its scroll, so the prev/next switcher can't live up there like on
    every other project page without getting covered by it — moved one section
    later, to the top of #produkttext, in normal flow (not absolute) so it
    pushes the case copy down instead of overlapping it */
 .switcher-top .hero-switcher { position: static; margin-bottom: clamp(1.5rem, 4vw, 2.5rem); }
+/* MUJU only: a second copy of the switcher, sitting at the top of Context like
+   every other project page's does. Hidden on desktop — the sticky phone above
+   would still cover it there, which is exactly why .switcher-top exists — and
+   shown instead of that copy once mobile drops the sticky pin (see the media
+   query below) */
+.switcher-context { display: none; }
 .kontext-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: clamp(2rem, 5vw, 3.5rem); align-items: center; width: 100%; }
 .kontext-grid-solo { grid-template-columns: 1fr; max-width: 46rem; }
 /* heading sits directly above the body copy, using the same gap as the
@@ -459,6 +483,14 @@ a { color: inherit; text-decoration: none; }
   .site-nav.on-dark .menu-button,
   .site-nav.on-dark .nav-links a { color: var(--ink); }
   .site-nav.on-dark .menu-line { background: var(--ink); }
+  /* mobile dropdown reads WORK, ABOUT ME, CONTACT top to bottom — a different
+     order than the desktop sidebar's CONTACT/ABOUT ME/WORK, so it's set here
+     via flex order (by href, since the links are plain <a> with no classes)
+     rather than by reordering the desktop markup */
+  .nav-links a[href$="#work"] { order: 1; }
+  .nav-links a[href$="#about"] { order: 2; }
+  .nav-links a[href$="#contact"] { order: 3; }
+  .nav-links-legal { order: 4; }
   /* Impressum/Datenschutz ride along in the same dropdown as CONTACT/ABOUT
      ME/WORK, but read as secondary: smaller body copy instead of the bold
      display font the real nav items use, so they don't compete with them */
@@ -466,30 +498,36 @@ a { color: inherit; text-decoration: none; }
   .nav-links-legal a { font: 400 .8rem var(--font-text); letter-spacing: normal; opacity: .7; padding: 0; border-top: none; }
 
   .project-hero { height: 82vh; min-height: 26rem; }
-  /* desktop's 68%-biased cover crop is tuned for a wide landscape box: on a
-     narrow portrait one it zooms in so far right that it loses the photo's
-     own empty backdrop on the left, where the title/text needs to sit.
-     Anchoring left instead keeps that backdrop in view on the left. */
-  .project-hero img.relief-hero-photo { object-position: left center; }
-  /* a shorter hero band, just for this photo: cover always crops to the
-     box's own aspect, and the standard 82vh-tall, full-width mobile box is
-     so much narrower than this photo's wide landscape shot that showing
-     the backdrop AND the whole hanger at once is impossible at that aspect
-     — one always crowds out the other. A shallower band needs less width
-     relative to its height to "cover", so both fit side by side. The title/
-     text below no longer fits as an absolute overlay on top of a band this
-     short, so it drops into normal flow underneath instead — image on top,
-     full width, then the text on the plain page background below it,
-     rather than crammed on top of (and clipped by) the photo. */
-  .relief-hero-section { height: 34vh; min-height: 13rem; }
-  .relief-hero-section::before { display: none; }
-  .relief-hero-wrap .hero-overlay {
-    position: static;
-    left: auto; right: auto; bottom: auto;
-    max-width: none;
-    padding: 1.5rem var(--gutter) 0;
-    --overlay-fg: var(--ink);
-  }
+  /* relief's hero now matches every other project page's mobile treatment:
+     full-height photo with the title/text overlaid at the bottom — no more
+     shortened band with the text dropped below it. Desktop keeps its own
+     wide landscape photo and 68%-biased crop (non-mobile rules above)
+     unchanged; mobile swaps in its own portrait photo instead (via the
+     <picture><source> in the markup, relief-final-prototype_mobil.jpg) that
+     already frames the rack and chair together, so no crop bias is needed.
+     Desktop shows the wide studio shot in full (object-fit:contain, set
+     above); mobile's purpose-cropped portrait photo is built to fill its
+     frame instead, so it goes back to the shared cover treatment here. */
+  .project-hero img.relief-hero-photo { object-fit: cover; object-position: center; background: none; }
+  /* mobile keeps its own cover crop, which needs the same small oversize
+     buffer the parallax drift always relies on for cover-fitted photos
+     (contain, used on desktop above, needs none) */
+  .project-hero .hero-parallax.relief-hero-parallax { top: -6%; height: 112%; }
+  /* legibility floor for every project hero: the existing ::before gradient
+     only darkens a fade near the bottom of the photo, but on a narrow screen
+     the title/lead can end up sitting higher up over brighter or busier
+     parts of the same photo. A flat 30% scrim over the whole hero guarantees
+     contrast everywhere behind the text — white text gets a black scrim,
+     black text (.is-on-light, toggled in project.js alongside the same class
+     on .hero-overlay) gets a white one instead. Desktop leaves this off: the
+     hero text there sits low, inside the gradient's own darkened area. */
+  .project-hero::after { content: ''; position: absolute; inset: 0; background: rgba(17, 17, 15, .3); pointer-events: none; }
+  .project-hero.is-on-light::after { background: rgba(254, 255, 246, .3); }
+  /* MUJU only: skip the scrim — dropped on request */
+  .muju-main .project-hero::after { content: none; }
+  /* relief only: skip the scrim — dropped on request */
+  .relief-hero-section::after { content: none; }
+  .hero-swipe-hint { display: flex; justify-content: space-between; position: absolute; z-index: 3; top: clamp(1rem, 4vw, 2rem); left: var(--gutter); right: var(--gutter); pointer-events: none; }
   .hero-switcher { left: var(--gutter); right: var(--gutter); }
   .hero-switcher a { padding: .55rem .9rem; font-size: .7rem; }
   .hero-overlay { left: var(--gutter); right: 1.5rem; }
@@ -503,6 +541,9 @@ a { color: inherit; text-decoration: none; }
   /* the single short Problem card doesn't need the same near-full-screen
      floor as every other (multi-card) block on this page */
   #produkttext.block { min-height: 0; }
+  /* the tighter gap above is a desktop-only tweak; mobile keeps the standard
+     section-gap like every other transition on the page */
+  .relief-main #produkttext.block { margin-top: var(--section-gap); }
   /* on desktop this floats absolutely near the top of the section because
      the section is a fixed-height, vertically-centered box — the switcher
      can assume there's clear space above the centered content. Once .block
@@ -531,6 +572,13 @@ a { color: inherit; text-decoration: none; }
      section) so it doesn't leak into other pages' own sketch-sliders */
   .muju-sketch .sketch-slider { aspect-ratio: 2841 / 2586; }
   .outcome-layout { grid-template-columns: 1fr; }
+  /* cinema's #redesign gallery keeps its desktop 1.4fr/1fr column split here
+     otherwise: that rule is ID-scoped, so it out-specifies (and silently
+     wins over) the plain .outcome-layout reset just above, leaving the
+     gallery squeezed into a narrow side column instead of stacking above the
+     text at full width like every other project page's outcome gallery */
+  #redesign .outcome-layout { grid-template-columns: 1fr; }
+  #redesign .outcome-slider { max-width: 28rem; width: 100%; margin: 0 auto; }
   .contact { grid-template-columns: 1fr; gap: 3rem; padding-left: var(--gutter); padding-right: var(--gutter); }
   .contact-face { width: 50vw; }
   .contact-legal { left: var(--gutter); }
@@ -540,8 +588,8 @@ a { color: inherit; text-decoration: none; }
      desktop design). On mobile there isn't room for that overlap without the
      phone covering the hero text, so the frame comes off entirely and the
      clip becomes a plain full-bleed section of its own, sitting in normal
-     flow between the hero and Context instead of pinned on top of either. */
-  .hero-phone-wrap { position: static; height: auto; margin-top: 0; pointer-events: auto; }
+     flow — see the reorder below for where it now lands. */
+  .hero-phone-wrap { position: static; height: auto; margin-top: var(--section-gap); pointer-events: auto; }
   .hero-phone-inner { width: 100%; height: auto; margin-left: 0; display: block; }
   .hero-phone-group { position: static; }
   .hero-phone-group .hero-phone {
@@ -563,6 +611,25 @@ a { color: inherit; text-decoration: none; }
      short, so also drop the shared min-height:100svh cap set above — that was
      leaving a large empty gap above and below it on a narrow screen */
   .hero-phone-wrap + .kontext-block { margin-top: var(--section-gap); min-height: auto; }
+  /* MUJU only, mobile: now that the video is a plain in-flow section instead
+     of a sticky overlay, Context can move back to reading first — switcher,
+     then Context, then the video below it — matching every other project
+     page's order instead of the desktop-only video-before-Context layout.
+     main's direct children are reordered via flex instead of touching the
+     desktop DOM/markup, which the sticky-pin trick above still depends on. */
+  .muju-main { display: flex; flex-direction: column; }
+  .muju-main > .project-hero { order: 1; }
+  .muju-main > #kontext { order: 2; }
+  .muju-main > .hero-phone-wrap { order: 3; }
+  .muju-main > #produkttext { order: 4; }
+  .muju-main > #anwendung { order: 5; }
+  .muju-main > .process-gallery-section { order: 6; }
+  .muju-main > #outcome { order: 7; }
+  /* swap which copy of the switcher shows: the Product-Text one (needed on
+     desktop to dodge the sticky phone) hides, the Context one (matching every
+     other page) takes over now that Context reads first */
+  .switcher-top .hero-switcher { display: none; }
+  .switcher-context { display: flex; position: static; margin-bottom: clamp(1.5rem, 4vw, 2.5rem); }
 
   /* "01 Insight & Goal": the image runs beside the text as a flush-edge strip
      on desktop (untouched above). On a narrow column there's no room for that

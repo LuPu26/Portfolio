@@ -45,13 +45,17 @@
     </div>
   </nav>
 
-  <main>
+  <main class="muju-main">
     <section class="project-hero" data-nav-theme="dark" aria-label="Project hero">
       <div class="hero-parallax">
         <picture>
           <source media="(max-width: 1080px)" srcset="projects/02-muju-juggling/product/juggling-ball-toss-mobile.jpg">
           <img decoding="async" fetchpriority="high" class="hero-mirrored" src="projects/02-muju-juggling/product/juggling-ball-toss.jpg" alt="A juggling ball tossed above an open hand" data-nav-luminance="0.632" data-bg-luminance="0.252">
         </picture>
+      </div>
+      <div class="hero-swipe-hint" aria-hidden="true">
+        <span class="hero-swipe-arrow prev">&lt;</span>
+        <span class="hero-swipe-arrow next">&gt;</span>
       </div>
       <div class="hero-overlay">
         <h1 class="hero-title"><a href="#produkttext">MUJU</a></h1>
@@ -91,6 +95,10 @@
     </div>
 
     <section class="block kontext-block" id="kontext" aria-label="Context">
+      <div class="hero-switcher switcher-context">
+        <a class="prev" href="project-knittingblind.html">&larr; Previous Project</a>
+        <a class="next" href="project-cinemaseatplan.html">Next Project &rarr;</a>
+      </div>
       <div class="kontext-grid kontext-grid-solo">
         <div class="kontext-copy">
           <h2 class="section-heading button">Context</h2>

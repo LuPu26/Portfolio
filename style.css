@@ -320,6 +320,76 @@ a { color: inherit; text-decoration: none; }
 .hero.is-burst .category.face-5 { z-index: 2; transform: translate(calc(-50% + var(--logo-w) * 0.171), calc(-50% + var(--logo-h) * -0.38)); }
 .hero.is-burst .category.face-6 { z-index: 2; transform: translate(calc(-50% + var(--logo-w) * -0.6), calc(-50% + var(--logo-h) * 0.68)); }
 
+/* cursor hint sitting right on the glasses (face-5), not beside them — a one-time intro
+   played by script.js 0.3s after the burst settles: pops in (.is-visible), mimes a click
+   (scale pulse + burst), then drags the glasses to the right (.is-auto-dragging tweens
+   the translate that both the glasses and the cursor get, so they visibly move together)
+   before fading back out for good — a flat, outline-free arrow in the same red as the
+   contact section/form (#f23800). After that the stickers take over the idle nudge
+   again via the wobble above. */
+.hero-cursor-hint {
+  position: absolute;
+  top: 44%;
+  left: 66%;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 10;
+  transition: opacity .35s ease;
+}
+.hero-cursor-hint.is-visible {
+  animation: cursor-hint-appear .5s cubic-bezier(.34, 1.56, .64, 1) forwards;
+}
+/* only while the scripted drag plays — real user drags stay instant (no transition),
+   set directly via the hero pointermove handler */
+.category-photo.is-auto-dragging .category-inner,
+.hero-cursor-hint.is-auto-dragging {
+  transition: translate .8s cubic-bezier(.34, 1.56, .64, 1);
+}
+.hero-cursor-hint-icon {
+  position: relative;
+  display: block;
+  width: clamp(2.7rem, 4.5vw, 4.5rem);
+  height: clamp(2.7rem, 4.5vw, 4.5rem);
+}
+/* overflow visible: the burst lines (drawn radiating out from the arrow's tip at
+   viewBox point 4,2) reach past the 24x24 viewBox once scaled up in the animation
+   below, and would otherwise get clipped by the svg's own default overflow:hidden */
+.hero-cursor-hint-icon svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.hero-cursor-hint-icon path {
+  fill: #f23800;
+}
+/* eight short strokes around the tip (not a ring) — scaling the whole group out from
+   that exact point, while fading, reads as little dashes shooting outward from the
+   click, comic-sparkle style, instead of a wave/ripple expanding evenly */
+.hero-cursor-hint-burst {
+  transform-box: view-box;
+  transform-origin: 4px 2px;
+  opacity: 0;
+}
+.hero-cursor-hint-burst line {
+  stroke: #f23800;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+@keyframes cursor-hint-appear {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.4); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes cursor-hint-click {
+  0%, 100% { transform: scale(1); }
+  40% { transform: scale(.7); }
+  70% { transform: scale(1.1); }
+}
+@keyframes cursor-hint-burst {
+  0% { opacity: 0; transform: scale(.26); }
+  30% { opacity: 1; transform: scale(.91); }
+  100% { opacity: 0; transform: scale(1.95); }
+}
+.hero-cursor-hint-icon.is-clicking { animation: cursor-hint-click .6s ease; }
+.hero-cursor-hint-icon.is-clicking .hero-cursor-hint-burst { animation: cursor-hint-burst .6s ease; }
+
 .section {
   min-height: 100svh;
   padding: 3rem var(--gutter) 3rem var(--content-safe);
@@ -547,6 +617,14 @@ a { color: inherit; text-decoration: none; }
   .site-nav.on-dark .menu-button,
   .site-nav.on-dark .nav-links a { color: var(--ink); }
   .site-nav.on-dark .menu-line { background: var(--ink); }
+  /* mobile dropdown reads WORK, ABOUT ME, CONTACT top to bottom — a different
+     order than the desktop sidebar's CONTACT/ABOUT ME/WORK, so it's set here
+     via flex order (by href, since the links are plain <a> with no classes)
+     rather than by reordering the desktop markup */
+  .nav-links a[href$="#work"] { order: 1; }
+  .nav-links a[href$="#about"] { order: 2; }
+  .nav-links a[href$="#contact"] { order: 3; }
+  .nav-links-legal { order: 4; }
   /* Impressum/Datenschutz ride along in the same dropdown as CONTACT/ABOUT
      ME/WORK, but read as secondary: smaller body copy instead of the bold
      display font the real nav items use, so they don't compete with them */

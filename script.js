@@ -75,6 +75,45 @@ const dragHint = document.querySelector('.category.drag-hint');
 const dragHintInner = dragHint ? dragHint.querySelector('.category-inner') : null;
 const HERO_BURST_MS = 900;
 
+// a scripted intro plays once, 0.3s after the burst settles: a comic-style cursor lands
+// on the glasses (face-5), mimes a click, then drags them to the right — spelling out
+// that the stickers are draggable. Once that's done the cursor fades away for good and
+// the stickers fall back to idle-wobbling (scheduleIdleWobble below) as the ongoing cue.
+const cursorHint = document.querySelector('.hero-cursor-hint');
+const cursorHintIcon = cursorHint ? cursorHint.querySelector('.hero-cursor-hint-icon') : null;
+const CURSOR_DEMO_DELAY_MS = 300;
+const CURSOR_APPEAR_MS = 500;
+const CURSOR_CLICK_MS = 600;
+const CURSOR_DRAG_MS = 800;
+
+const runCursorDemo = () => {
+  const glasses = stickers.find((s) => s.category.classList.contains('face-5'));
+  if (!cursorHint || !cursorHintIcon || !glasses) return;
+
+  cursorHint.classList.add('is-visible');
+
+  setTimeout(() => {
+    cursorHintIcon.classList.add('is-clicking');
+
+    setTimeout(() => {
+      cursorHintIcon.classList.remove('is-clicking');
+
+      // drags the glasses (and the cursor riding along with it) to the right exactly
+      // like a real drag would, so the shifted position sticks around afterwards
+      glasses.pos.x += glasses.inner.offsetWidth * 0.5;
+      glasses.category.classList.add('is-auto-dragging');
+      cursorHint.classList.add('is-auto-dragging');
+      glasses.inner.style.translate = `${glasses.pos.x}px ${glasses.pos.y}px`;
+      cursorHint.style.translate = glasses.inner.style.translate;
+
+      setTimeout(() => {
+        glasses.category.classList.remove('is-auto-dragging');
+        cursorHint.classList.remove('is-auto-dragging', 'is-visible');
+      }, CURSOR_DRAG_MS);
+    }, CURSOR_CLICK_MS);
+  }, CURSOR_APPEAR_MS);
+};
+
 const triggerHeroBurst = () => {
   hero.classList.add('is-bursting', 'is-burst');
 
@@ -91,6 +130,7 @@ const triggerHeroBurst = () => {
     hero.classList.remove('is-bursting');
     heroSettled = true;
     scheduleIdleWobble();
+    setTimeout(runCursorDemo, CURSOR_DEMO_DELAY_MS);
   }, HERO_BURST_MS);
 };
 
@@ -124,9 +164,9 @@ window.addEventListener('keydown', interceptHeroKey);
 
 // the wobble is the cue that the stickers are draggable — it only starts once
 // the burst/explosion has actually happened (not during the assembled lead-in),
-// then loops: every 2s of no interaction (scroll, click, drag, keypress) it
+// then loops: every 5s of no interaction (scroll, click, drag, keypress) it
 // wobbles again and re-arms itself, so it keeps going as long as the page sits
-// idle, and any interaction resets the 2s countdown
+// idle, and any interaction resets the 5s countdown
 const IDLE_WOBBLE_MS = 5000;
 let heroSettled = false;
 const wobbleStickers = () => {
@@ -222,6 +262,11 @@ hero.addEventListener('pointermove', (event) => {
   // would apply it in the rotated element's local frame, making the wobble's
   // pivot appear to swing around rather than stay centered on a dragged sticker
   sticker.inner.style.translate = `${sticker.pos.x}px ${sticker.pos.y}px`;
+  // the cursor hint lives on the glasses (face-5) — keep it glued to the image
+  // itself rather than left behind at the glasses' pre-drag spot
+  if (cursorHint && sticker.category.classList.contains('face-5')) {
+    cursorHint.style.translate = sticker.inner.style.translate;
+  }
 });
 
 const endDrag = (event) => {
