@@ -523,8 +523,8 @@ a { color: inherit; text-decoration: none; }
   .hero-overlay { left: var(--gutter); right: 1.5rem; }
   /* desktop leaves line-height at its default ('normal', ~1.28 for Space
      Grotesk); on mobile two-word titles (e.g. "Knitting Blind") wrap onto a
-     second line, so the gap between them is cut to about half of that */
-  .hero-title { line-height: .64; }
+     second line, so the gap between them is tightened a bit */
+  .hero-title { line-height: .85; }
   /* on a narrow screen every grid below stacks to one column, so a hard 100svh cap
      would start cropping real content — let these sections grow instead. The fixed
      top bar now takes real layout space (via body's own padding-top above), so
