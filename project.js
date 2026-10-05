@@ -356,11 +356,11 @@ document.querySelectorAll('.phone-sound-toggle').forEach((button) => {
   sync();
 });
 
-// swipe left/right anywhere on a project page to jump to the next/previous
-// project — mirrors the prev/next links already in .hero-switcher (MUJU has
-// two copies of that switcher, one hidden per breakpoint; either's links work
-// since both point at the same URLs). Ignored when the swipe starts inside a
-// photo slider or the lightbox, so it doesn't fight with gallery browsing.
+// swipe left/right over the hero image to jump to the next/previous project —
+// mirrors the prev/next links already in .hero-switcher (MUJU has two copies
+// of that switcher, one hidden per breakpoint; either's links work since both
+// point at the same URLs). Only armed when the swipe starts on the hero image
+// itself, so scrolling the rest of the page never gets mistaken for a swipe.
 const prevProjectLink = document.querySelector('.hero-switcher a.prev');
 const nextProjectLink = document.querySelector('.hero-switcher a.next');
 if (prevProjectLink || nextProjectLink) {
@@ -368,7 +368,7 @@ if (prevProjectLink || nextProjectLink) {
   let swipeStartX = null;
   let swipeStartY = null;
   document.addEventListener('touchstart', (event) => {
-    if (event.target.closest('.slider, .lightbox, .contact-form')) {
+    if (!event.target.closest('.project-hero')) {
       swipeStartX = null;
       return;
     }

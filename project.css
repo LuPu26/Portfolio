@@ -190,15 +190,6 @@ a { color: inherit; text-decoration: none; }
 
 .hero-mirrored { transform: scaleX(-1); }
 
-/* mobile-only affordance hinting that a left/right swipe jumps to the other
-   project (see the touch handler in project.js) — hidden on desktop, where
-   swipe navigation doesn't apply. Colored to match the hero text itself
-   (.project-hero.is-on-light is mirrored onto this same element by
-   project.js, alongside .hero-overlay's own copy of that class) */
-.hero-swipe-hint { display: none; }
-.hero-swipe-arrow { font: 400 1.7rem var(--font-display); line-height: 1; color: var(--paper); }
-.project-hero.is-on-light .hero-swipe-arrow { color: var(--ink); }
-
 /* the big phone mockup: pulled up by a negative top margin so it already
    overlaps the hero at scroll:0 (visible in the header from the start), then
    locked in place via position:sticky as you scroll down. The buffer below
@@ -527,10 +518,13 @@ a { color: inherit; text-decoration: none; }
   .muju-main .project-hero::after { content: none; }
   /* relief only: skip the scrim — dropped on request */
   .relief-hero-section::after { content: none; }
-  .hero-swipe-hint { display: flex; justify-content: space-between; position: absolute; z-index: 3; top: clamp(1rem, 4vw, 2rem); left: var(--gutter); right: var(--gutter); pointer-events: none; }
   .hero-switcher { left: var(--gutter); right: var(--gutter); }
   .hero-switcher a { padding: .55rem .9rem; font-size: .7rem; }
   .hero-overlay { left: var(--gutter); right: 1.5rem; }
+  /* desktop leaves line-height at its default ('normal', ~1.28 for Space
+     Grotesk); on mobile two-word titles (e.g. "Knitting Blind") wrap onto a
+     second line, so the gap between them is cut to about half of that */
+  .hero-title { line-height: .64; }
   /* on a narrow screen every grid below stacks to one column, so a hard 100svh cap
      would start cropping real content — let these sections grow instead. The fixed
      top bar now takes real layout space (via body's own padding-top above), so
