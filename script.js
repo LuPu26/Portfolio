@@ -20,7 +20,6 @@ if (deferredImages.length) {
   deferredImages.forEach((img) => deferredImageObserver.observe(img));
 }
 
-const contactForm = document.querySelector('.contact-form');
 const hero = document.querySelector('.hero');
 const draggableCategories = document.querySelectorAll('.category-photo');
 const workTrack = document.querySelector('.work-track');
@@ -387,40 +386,9 @@ if (siteNav && navToggle) {
   });
 }
 
-// routed through FormSubmit.co's AJAX endpoint (no backend of our own) straight
-// to pumpemedia@gmail.com; the _honey field is a hidden honeypot bots tend to
-// fill in but real visitors never see, so a filled one is silently dropped
-contactForm.addEventListener('submit', (event) => {
-  event.preventDefault();
-  const honey = contactForm.querySelector('[name="_honey"]');
-  if (honey && honey.value) return;
-  const statusEl = contactForm.querySelector('.form-status');
-  const submitButton = contactForm.querySelector('button[type="submit"]');
-  const formData = new FormData(contactForm);
-  submitButton.disabled = true;
-  statusEl.textContent = 'Sending…';
-  fetch('https://formsubmit.co/ajax/pumpemedia@gmail.com', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      name: formData.get('name'),
-      email: formData.get('email'),
-      message: formData.get('message'),
-      _subject: 'New message from lucazoe.com',
-    }),
-  })
-    .then((response) => {
-      if (!response.ok) throw new Error('request failed');
-      statusEl.textContent = "Thanks, I'll get back to you soon.";
-      contactForm.reset();
-    })
-    .catch(() => {
-      statusEl.textContent = 'Something went wrong — please email me directly at pumpemedia@gmail.com instead.';
-    })
-    .finally(() => {
-      submitButton.disabled = false;
-    });
-});
+// no preventDefault here: the form posts straight to FormSubmit.co (see its
+// action attribute in index.html), which emails the submission to
+// pumpemedia@gmail.com and then redirects back via the hidden _next field
 
 // contrast-aware text color: rather than a hand-picked list of "dark"
 // sections, this reads what's actually behind the nav — its background-color
