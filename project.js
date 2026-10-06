@@ -20,12 +20,10 @@ if (deferredImages.length) {
   deferredImages.forEach((img) => deferredImageObserver.observe(img));
 }
 
-const contactForm = document.querySelector('.contact-form');
-contactForm.addEventListener('submit', (event) => {
-  event.preventDefault();
-  contactForm.querySelector('.form-status').textContent = "Thanks, I'll get back to you soon.";
-  contactForm.reset();
-});
+// no submit handler here: the form posts straight to FormSubmit.co (see its
+// action attribute in each project page's markup), which emails the
+// submission to pumpemedia@gmail.com and redirects back via the hidden
+// _next field
 
 // mobile-only hamburger toggle for the top-bar nav; the button and dropdown
 // are both display:none on desktop so this never has anything to do there

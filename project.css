@@ -413,14 +413,13 @@ a { color: inherit; text-decoration: none; }
 /* green fill = a real, clickable link, so it gets the button size/style
    instead of a plain underline */
 .contact-cta { display: inline-block; padding: .8rem 1.4rem; background: var(--acid); border: 2px solid var(--ink); color: var(--ink); font: 700 var(--fs-button) var(--font-display); text-transform: uppercase; letter-spacing: .02em; }
-.contact-form { display: grid; gap: .35rem; }
+.contact-form { display: grid; gap: 1rem; }
 .contact-form input, .contact-form textarea { width: 100%; border: 2px solid var(--paper); border-radius: 0; background: transparent; color: var(--paper); font: inherit; padding: .65rem .75rem; outline: none; }
 .contact-form input::placeholder, .contact-form textarea::placeholder { color: rgba(254, 255, 246, .65); }
 .contact-form input:focus, .contact-form textarea:focus { box-shadow: 4px 4px 0 var(--paper); }
 .contact-form textarea { min-height: 7rem; resize: vertical; }
 .contact-form button { justify-self: start; border: 2px solid var(--ink); background: var(--acid); color: var(--ink); cursor: pointer; padding: .8rem 1.4rem; font: 700 var(--fs-button) var(--font-display); text-transform: uppercase; letter-spacing: .02em; }
 .contact-face { width: clamp(16rem, 24vw, 22rem); height: auto; transform: rotate(-6deg); filter: drop-shadow(0 .5rem .4rem rgba(0, 0, 0, .25)); }
-.form-status { font-size: .85rem; min-height: 1.3em; color: var(--paper); }
 
 @media (max-width: 1080px) {
   /* matches the same reduction on the homepage — every heading here (section

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'self' https://formsubmit.co; object-src 'none'">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="description" content="An independent redesign of a cinema's seat-selection screen, after watching customers mistake open seats for taken ones. A LUCAZOE case study.">
   <title>Cinema Seat Plan · LUCAZOE</title>
@@ -141,12 +141,13 @@
       <h2 class="section-heading button" id="contact-title">You like what you see?</h2>
       <a class="contact-cta" href="mailto:pumpemedia@gmail.com">Let’s get in Contact &rarr;</a>
     </div>
-    <form class="contact-form">
+    <form class="contact-form" action="https://formsubmit.co/pumpemedia@gmail.com" method="POST">
+      <input type="hidden" name="_subject" value="New message from lucazoe.com">
+      <input type="hidden" name="_next" value="https://lucazoe.com/index.html#contact">
       <input aria-label="Name" name="name" placeholder="Name" required>
       <input aria-label="Email" name="email" type="email" placeholder="Email" required>
       <textarea aria-label="Message" name="message" placeholder="Your message" required></textarea>
       <button type="submit">Send message &rarr;</button>
-      <div class="form-status" role="status" aria-live="polite"></div>
     </form>
     <div class="contact-legal">
       <a href="impressum.html">Impressum</a>

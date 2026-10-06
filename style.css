@@ -535,7 +535,7 @@ a { color: inherit; text-decoration: none; }
    instead of a plain underline */
 .contact-cta { display: inline-block; padding: .8rem 1.4rem; background: var(--acid); border: 2px solid var(--ink); color: var(--ink); font: 700 var(--fs-button) var(--font-display); text-transform: uppercase; letter-spacing: .02em; }
 
-.contact-form { display: grid; gap: .35rem; }
+.contact-form { display: grid; gap: 1rem; }
 .contact-form label { color: var(--paper); }
 
 .contact-form input,
@@ -562,7 +562,6 @@ a { color: inherit; text-decoration: none; }
 .contact-legal a { color: inherit; }
 .contact-legal a:hover { color: var(--acid); }
 .contact-face { width: clamp(21.6rem, 32.4vw, 30.6rem); height: auto; transform: rotate(-6deg); filter: drop-shadow(0 .5rem .4rem rgba(0, 0, 0, .25)); }
-.form-status { font-size: .85rem; min-height: 1.3em; }
 
 @media (max-width: 1080px) {
   /* every heading (section titles, the hero's "Portfolio" hint, slider
